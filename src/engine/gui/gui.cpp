@@ -15,6 +15,7 @@ static bool infoCollapsed = true;
 
 Camera* gui::camPtr = nullptr;
 Light* gui::lightPtr = nullptr;
+Material* gui::sphereMaterialPtr = nullptr;
 
 u16 gui::fps = 1;
 
@@ -62,7 +63,7 @@ void gui::draw() {
 
   // ===== Spectate camera =============================================================================== //
 
-  if (!camPtr) error("The spectate camera is not linked to gui");
+  assert(camPtr);
   if (CollapsingHeader("Spectate camera")) {
     SliderFloat("Near##2", &camPtr->nearPlane, 0.01f, 1.f);
     SliderFloat("Far##2", &camPtr->farPlane,  10.f, 1000.f);
@@ -81,9 +82,20 @@ void gui::draw() {
     }
   }
 
+  // ===== Material ====================================================================================== //
+
+  assert(cubeMaterialPtr);
+  if (CollapsingHeader("Sphere material")) {
+    SliderFloat("Metallic", &sphereMaterialPtr->metallic, 0.f, 1.f);
+    SliderFloat("Roughness", &sphereMaterialPtr->roughness, 0.f, 1.f);
+    SliderFloat3("Base reflectivity", glm::value_ptr(sphereMaterialPtr->baseReflectivity), 0.f, 1.f);
+    ColorEdit3("Albedo", glm::value_ptr(sphereMaterialPtr->albedo));
+    ColorEdit3("Emissivity", glm::value_ptr(sphereMaterialPtr->emissivity));
+  }
+
   // ===== Light ========================================================================================= //
 
-  if (!lightPtr) error("The light is not linked to gui");
+  assert(lightPtr);
   if (CollapsingHeader("Light")) {
     DragFloat3("Position", glm::value_ptr(lightPtr->position));
     DragFloat("Radius", &lightPtr->radius, 1.f, 0.f);

@@ -14,6 +14,7 @@
 #include "engine/mesh/meshes.hpp"
 #include "engine/Light.hpp"
 #include "engine/texture/Texture2D.hpp"
+#include "engine/mesh/sphere/SphereMesh.hpp"
 #include "utils/clrp.hpp"
 
 using global::window;
@@ -31,18 +32,24 @@ void GLAPIENTRY MessageCallback(
   static const clrp::clrp_t clrpWarning{clrp::ATTRIBUTE::BOLD, clrp::FG::YELLOW};
 
   clrp::clrp_t clrpFinal = clrpError;
+  bool stop = true;
 
   switch (source) {
     case GL_DEBUG_SOURCE_SHADER_COMPILER:
       return; // Handled by the Shader class itself
     case GL_DEBUG_SOURCE_API:
       clrpFinal = clrpWarning; // "SIMD32 shader inefficient", skipping since occurs only on my laptop
+      stop = false;
+      break;
   }
 
   fprintf(
     stderr, "GL CALLBACK: %s source = 0x%x, id = 0x%x type = 0x%x, severity = 0x%x, message = %s\n",
     (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), source, id, type, severity, clrp::format(message, clrpFinal).c_str()
   );
+
+  if (stop)
+    exit(1);
 }
 
 int main() {
@@ -89,7 +96,7 @@ int main() {
 
   Shader lightShader("light.vert", "light.frag");
   Shader linesShader("lines.vert", "lines.frag");
-  Shader cubeShader("cube.vert", "cube.frag");
+  Shader sphereShader("sphere.vert", "pbr.frag");
 
   // ===== Cameras ============================================== //
 
@@ -106,11 +113,19 @@ int main() {
 
   // ============================================================ //
 
-  Light light({0.f, 30.f, 0.f});
+  Light light({0.f, 100.f, 0.f});
 
-  Mesh cube = Mesh::loadObj("res/obj/Cube.obj");
-  cube.translate(vec3(50.f));
-  cube.scale(10.f);
+  SphereMesh sphere(5, 20, 10.f);
+  sphere.translate(vec3(50.f));
+  sphere.scale(2.5f);
+
+  Material sphereMaterial{
+    vec3(1.f, 0.f, 0.f),
+    vec3(0.f),
+    vec3(0.f),
+    0.f,
+    1.f
+  };
 
   Mesh axis = meshes::axis();
   axis.scale(1e4f);
@@ -120,8 +135,7 @@ int main() {
 
   gui::camPtr = &cameraSpectate;
   gui::lightPtr = &light;
-
-  global::drawGlobalAxis = true;
+  gui::sphereMaterialPtr = &sphereMaterial;
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -154,15 +168,16 @@ int main() {
     global::profiler->clearTasks();
 
     light.update();
-    light.setUniforms(cubeShader);
+    light.setUniforms(sphereShader);
+    sphereMaterial.setUniforms(sphereShader);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_CULL_FACE); // Disable for plane meshes, enable for volumetric meshes
-    glEnable(GL_DEPTH_TEST); // Disable to ignore depth (draw one object over another one without discarding the farthest)
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
 
     Texture2D::getDebug0Tex().bind();
-    cube.draw(&cameraSpectate, cubeShader);
+    sphere.draw(&cameraSpectate, sphereShader);
     Texture2D::getDebug0Tex().unbind();
 
     glDisable(GL_CULL_FACE);

@@ -14,6 +14,7 @@ public:
 
   Mesh(Mesh&& other) = default;
   Mesh& operator=(Mesh&& other) = default;
+  Mesh() = default;
 
   Mesh(const std::vector<VertexPCTN>& vertices, const std::vector<GLuint>& indices, GLenum mode, GLenum usage = GL_STATIC_DRAW);
   Mesh(const std::vector<VertexPT>&   vertices, const std::vector<GLuint>& indices, GLenum mode, GLenum usage = GL_STATIC_DRAW);
