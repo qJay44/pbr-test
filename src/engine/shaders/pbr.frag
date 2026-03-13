@@ -76,6 +76,8 @@ void main() {
   vec3 brdf = Kd * lambert + cookTorrance;
   vec3 col = u_material.emissivity + brdf * u_lightColor * max(dot(L, N), 0.f);
 
+  col = pow(col, vec3(1.f / 2.2f));
+
 	FragColor = vec4(col, 1.f);
 }
 
