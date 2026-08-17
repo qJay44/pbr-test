@@ -2,20 +2,21 @@
 
 // Vertex Array Object
 struct VAO {
+  GLsizei size = 0;
+  GLuint id = 0;
+
   static void unbind() {
     glBindVertexArray(0);
   }
 
   static const VAO& getEmpty() {
-    static VAO emptyVAO;
-
-    if (!emptyVAO.id)
-      emptyVAO.gen();
-
+    static VAO emptyVAO{1};
     return emptyVAO;
   }
 
-  VAO() = default;
+  VAO(GLsizei size = 1) {
+    gen(size);
+  }
 
   VAO(const VAO&) = delete;
   VAO& operator=(const VAO&) = delete;
@@ -35,7 +36,8 @@ struct VAO {
     clear();
   }
 
-  void gen() {
+  void gen(GLsizei size = 1) {
+    this->size = size;
     glGenVertexArrays(size, &id);
   }
 
@@ -45,6 +47,7 @@ struct VAO {
 
   void clear() {
     if (id) glDeleteVertexArrays(size, &id);
+    size = 0;
     id = 0;
   }
 
@@ -52,9 +55,5 @@ struct VAO {
     glEnableVertexAttribArray(layout);
     glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
   }
-
-private:
-  static constexpr GLsizei size = 1;
-  GLuint id = 0;
 };
 

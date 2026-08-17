@@ -1,30 +1,18 @@
 #pragma once
 
 #include "Texture.hpp"
+#include "TextureDescriptor.hpp"
 #include "image2D.hpp"
 
 class TextureCubemap : public Texture {
 public:
+  using Texture::Texture;
+
   TextureCubemap() = default;
-  TextureCubemap(const fspath& folder, const TextureDescriptor& desc, bool async = true);
 
-  TextureCubemap(TextureCubemap&& other);
-
-  TextureCubemap& operator=(TextureCubemap&& other);
-
-  void update();
-
+  void loadFromImage(const fspath& path, const TextureDescriptor& desc);
+  void loadFromImage(const image2D& img, const TextureDescriptor& desc);
 private:
-  struct ImageData {
-    image2D images[6];
-  };
-
-  std::future<ImageData> texFuture;
-  bool loaded = false;
-
-private:
-  static ImageData load(fspath folder, GLenum internalFormat);
-
-  void upload(const ImageData& data);
+  void onInit(const TextureDescriptor& desc);
 };
 

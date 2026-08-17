@@ -9,7 +9,7 @@ float dt = 0.f;
 float time = 0.f;
 
 bool guiFocused     = false;
-bool drawWireframe  = false;
+bool wireframeMode  = false;
 bool drawNormals    = false;
 bool drawGlobalAxis = false;
 

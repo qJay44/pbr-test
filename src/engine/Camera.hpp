@@ -8,32 +8,40 @@ enum CameraFlags : u32 {
   CameraFlags_DrawRight   = 1,
   CameraFlags_DrawUp      = 1 << 1,
   CameraFlags_DrawForward = 1 << 2,
+  CameraFlags_DrawFrustum = 1 << 3,
   CameraFlags_DrawDirections = CameraFlags_DrawRight | CameraFlags_DrawUp | CameraFlags_DrawForward,
 };
 
 class Camera : public Moveable {
 public:
+  // Implementent these when needed
   Camera() = delete;
   Camera(Camera&) = delete;
   Camera(Camera&&) = delete;
+  Camera& operator=(const Camera&) = delete;
+  Camera& operator=(Camera&&) = delete;
+
   Camera(vec3 pos, float yaw = PI_2, float pitch = 0.f);
 
-  const float& getNearPlane()   const;
-  const float& getFarPlane()    const;
-  const float& getFov()         const;
-  const float& getAspectRatio() const;
-  const mat4&  getProj()        const;
-  const mat4&  getView()        const;
-  const mat4&  getProjView()    const;
+  const float& getNearPlane()        const;
+  const float& getFarPlane()         const;
+  const float& getFov()              const;
+  const float& getAspectRatio()      const;
+  const mat4&  getProj()             const;
+  const mat4&  getView()             const;
+  const mat4&  getProjView()         const;
+  const vec3&  getPositionRelative() const;
 
   mat4 getProjViewInv() const;
 
   void setNearPlane(float p);
   void setFarPlane(float p);
   void setFlags(u32 f);
+  void setUniforms(Shader& shader) const;
+  void setPositionRelative(vec3 p);
 
   void update();
-  void draw(const Camera* cam, Shader& shader) const;
+  void draw(const Camera* cam) const;
 
 protected:
   friend struct gui;
@@ -48,6 +56,7 @@ protected:
   mat4 view = mat4(1.f);
   mat4 pv   = mat4(1.f);
 
+  vec3 relativePos{};
   u32 flags = CameraFlags_None;
 };
 

@@ -3,8 +3,12 @@
 #include "utils/clrp.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "utils/utils.hpp"
+#include <filesystem>
+#include <fstream>
 
-fspath Shader::directory = "";
+namespace fs = std::filesystem;
+
+fspath Shader::rootDir = "";
 
 Shader::Shader(const fspath& vsPath, const fspath& fsPath, const fspath& gsPath)
   : Shader(vsPath, fsPath, "", "", gsPath) {}
@@ -31,6 +35,8 @@ Shader::Shader(const fspath& vsPath, const fspath& fsPath, const fspath& tescPat
   for (int i = 0; i < idx; i++) glAttachShader(program, shaders[i]);
   link(program);
   for (int i = 0; i < idx; i++) glDeleteShader(shaders[i]);
+
+  updateTimestamps();
 }
 
 Shader::Shader(const fspath& compPath) {
@@ -41,7 +47,29 @@ Shader::Shader(const fspath& compPath) {
   glDeleteShader(shader);
 }
 
-void Shader::setDirectoryLocation(const fspath& path) { Shader::directory = path; }
+Shader::Shader(Shader&& other) {
+  std::swap(program, other.program);
+  std::swap(locs, other.locs);
+  std::swap(shadersMetadata, other.shadersMetadata);
+}
+
+Shader& Shader::operator=(Shader&& other) {
+  if (this != &other) {
+    std::swap(program, other.program);
+    std::swap(locs, other.locs);
+    std::swap(shadersMetadata, other.shadersMetadata);
+  }
+
+  return *this;
+}
+
+Shader::~Shader() {
+  if (program)
+    glDeleteProgram(program);
+  program = 0;
+}
+
+void Shader::setDirectoryLocation(const fspath& path) { Shader::rootDir = path; }
 
 GLint Shader::getUniformLoc(const std::string& name) {
   const auto it = locs.find(name);
@@ -51,12 +79,42 @@ GLint Shader::getUniformLoc(const std::string& name) {
   GLint loc = glGetUniformLocation(program, name.c_str());
   locs.emplace(name, loc);
 
-  #ifndef NDEBUG
-    if (loc == -1)
-      warning("[Shader::getUniformLoc] Didn't found location [{}]", name);
-  #endif
-
   return loc;
+}
+
+bool Shader::needsReload() {
+  try {
+    for (const auto& data : shadersMetadata) {
+      auto currTime = fs::last_write_time(data.second.first);
+      if (currTime != data.second.second)
+        return true;
+    }
+  } catch (const fs::filesystem_error& e) {
+    error("[Shader::needsReload] {}", e.what());
+  }
+
+  return false;
+}
+
+void Shader::reload() {
+  if (program == 0)
+    error("[Shader::reload] Trying to reload uninitialized shader");
+
+  glDeleteProgram(program);
+  locs.clear();
+
+  program = glCreateProgram();
+  GLuint shaders[5];
+  u8 idx = 0;
+
+  for (const auto& data : shadersMetadata)
+    shaders[idx++] = compile(data.second.first, data.first);
+
+  for (int i = 0; i < idx; i++) glAttachShader(program, shaders[i]);
+  link(program);
+  for (int i = 0; i < idx; i++) glDeleteShader(shaders[i]);
+
+  updateTimestamps();
 }
 
 void Shader::use() const { glUseProgram(program); }
@@ -95,27 +153,73 @@ void Shader::setUniform1fv(const std::string& name, GLsizei count, const GLfloat
 void Shader::setUniform3fv(const std::string& name, GLsizei count, const GLfloat* v) { setUniform3fv(getUniformLoc(name), count, v); }
 void Shader::setUniformMatrix4f(const std::string& name, const mat4& m) { setUniformMatrix4f(getUniformLoc(name), m); }
 
-GLuint Shader::load(fspath path, int type) {
-  path = directory.empty() ? path : directory / path;
-  std::string shaderStr = readFile(path);
-  const char* shaderStrPtr = shaderStr.c_str();
+std::string Shader::load(std::unordered_set<std::string>& includedShaders, fspath path) {
+  constexpr std::string_view includePrefix = "#include";
+
+  std::string finalStr{};
+  std::ifstream file(path);
+
+  if (!file.is_open())
+    error("[Shader::load] Can't open file [{}]", path.string());
+
+  std::string line;
+  int lineOffset = 1;
+  while (std::getline(file, line)) {
+    auto includeStart = line.find(includePrefix);
+    if (includeStart != line.npos) {
+      // Get include path
+      line = line.substr(line.find_first_of("\"") + 1);
+      line.pop_back();
+
+      fspath includePath = path.parent_path() / line;
+
+      if (includedShaders.contains(includePath))
+        continue;
+
+      #ifndef NDEBUG
+        std::printf("Including [%s] -> [%s]\n", includePath.c_str(), path.string().c_str());
+      #endif
+
+      finalStr += load(includedShaders, includePath);
+      finalStr += std::format("#line {}\n", lineOffset);
+      includedShaders.insert(includePath.filename());
+
+      continue;
+    }
+
+    finalStr += line + '\n';
+    lineOffset++;
+  }
+
+  file.close();
+
+  return finalStr;
+}
+
+GLuint Shader::compile(fspath path, GLenum type) {
+  if (shadersMetadata.contains(type)) {
+    path = shadersMetadata[type].first;
+  } else {
+    path = rootDir.empty() ? path : rootDir / path;
+    shadersMetadata.emplace(type, std::pair<fspath, fs::file_time_type>{path, {}});
+  }
+
+  std::unordered_set<std::string> includedShaders;
+  std::string shaderStr = load(includedShaders, path);
+  const GLchar* shaderStrPtr = shaderStr.c_str();
+
   GLuint shaderId = glCreateShader(type);
   glShaderSource(shaderId, 1, &shaderStrPtr, NULL);
 
-  return shaderId;
-}
-
-GLuint Shader::compile(const fspath& path, int type) {
-  GLuint shaderId = load(path, type);
   GLint hasCompiled;
-  char infoLog[1'024];
+  char infoLog[1024];
 
   glCompileShader(shaderId);
   glGetShaderiv(shaderId, GL_COMPILE_STATUS, &hasCompiled);
 
   // if GL_FALSE
   if (!hasCompiled) {
-    glGetShaderInfoLog(shaderId, 1'024, NULL, infoLog);
+    glGetShaderInfoLog(shaderId, 1024, NULL, infoLog);
     std::string fmt = clrp::prepare(clrp::ATTRIBUTE::BOLD, clrp::FG::RED);
     std::string head = std::format("\n===== Shader compilation error ({}) =====\n\n", path.string().c_str());
     printf(fmt.c_str(), head.c_str());
@@ -144,5 +248,11 @@ void Shader::link(GLuint program) {
     printf(fmt.c_str(), "=============================\n\n");
     exit(1);
   }
+}
+
+void Shader::updateTimestamps() {
+  for (auto& data : shadersMetadata)
+    if (fs::exists(data.second.first))
+      data.second.second = fs::last_write_time(data.second.first);
 }
 

@@ -5,7 +5,7 @@ using SphereFaceChunk = SphereMesh::SphereFaceChunk;
 SphereFaceChunk::SphereFaceChunk(vec3 up, vec2 start, const SphereMesh* sm) {
   int res = sm->resolution;
 
-  std::vector<VertexPT> vertices;
+  std::vector<vertex::PT> vertices;
   std::vector<GLuint> indices;
   size_t triIndex = 0;
 
@@ -65,7 +65,7 @@ SphereFaceChunk::SphereFaceChunk(vec3 up, vec2 start, const SphereMesh* sm) {
       vec3 pX = percentX * axisA;
       vec3 pointOnPlane = up + pX + pY;
 
-      VertexPT& vertex = vertices[idx];
+      auto& vertex = vertices[idx];
       vertex.position = spherifyFancy(pointOnPlane) * sm->radius;
       vertex.texture = vec2{percentX, percentY} * 0.5f + 0.5f;
 
@@ -76,14 +76,9 @@ SphereFaceChunk::SphereFaceChunk(vec3 up, vec2 start, const SphereMesh* sm) {
     }
   }
 
-  static_cast<Mesh&>(*this) = Mesh(vertices, indices, sm->renderPrimitive);
-  firstPos = vertices.front().position;
-  lastPos = vertices.back().position;
-  debugColor = {
-    (rand() % 255) / 255.f,
-    (rand() % 255) / 255.f,
-    (rand() % 255) / 255.f
-  };
+  MeshData data(vertices, indices);
+  data.mode = sm->renderPrimitive;
+  mesh = MeshElements(data);
 }
 
 vec3 SphereFaceChunk::spherify(const vec3& v) { return normalize(v); }

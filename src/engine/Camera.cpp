@@ -29,6 +29,19 @@ void Camera::setNearPlane(float p) { nearPlane = p; }
 void Camera::setFarPlane(float p) { farPlane = p; }
 void Camera::setFlags(u32 f) { flags = f; }
 
+void Camera::setUniforms(Shader& s) const {
+  s.setUniform1f      ("u_camNear"   , getNearPlane());
+  s.setUniform1f      ("u_camFar"    , getFarPlane());
+  s.setUniform1f      ("u_camFov"    , getFov());
+  s.setUniform3f      ("u_camPos"    , getPosition());
+  s.setUniform3f      ("u_camRight"  , getRight());
+  s.setUniform3f      ("u_camUp"     , getUp());
+  s.setUniform3f      ("u_camForward", getForward());
+  s.setUniformMatrix4f("u_camProj"   , getProj());
+  s.setUniformMatrix4f("u_camView"   , getView());
+  s.setUniformMatrix4f("u_camPV"     , getProjView());
+}
+
 void Camera::update() {
   vec2 winSize = global::getWinSize();
 
@@ -42,18 +55,24 @@ void Camera::update() {
     glfwSetCursorPos(global::window, winCenter.x, winCenter.y);
 }
 
-void Camera::draw(const Camera* cam, Shader& shader) const {
+void Camera::draw(const Camera* cam) const {
   if (this != cam) {
     const vec3& p = position;
 
-    if (flags & CameraFlags_DrawRight)
-      meshes::line(p, p + getRight(), global::red).draw(cam, shader);
+    if (flags & CameraFlags_DrawRight)   Mesh::drawDebugDirectionLine(cam, p, getRight(), global::red);
+    if (flags & CameraFlags_DrawUp)      Mesh::drawDebugDirectionLine(cam, p, up, global::green);
+    if (flags & CameraFlags_DrawForward) Mesh::drawDebugDirectionLine(cam, p, orientation, global::blue);
 
-    if (flags & CameraFlags_DrawUp)
-      meshes::line(p, p + up, global::green).draw(cam, shader);
+    if (flags & CameraFlags_DrawFrustum) {
+      MeshData frustumMeshData = meshes::frustumMeshData(this);
+      static MeshElements frustumMesh(frustumMeshData);
+      frustumMesh.updateBufferVBO(frustumMeshData);
 
-    if (flags & CameraFlags_DrawForward)
-      meshes::line(p, p + getForward(), global::blue).draw(cam, shader);
+      static Shader shader("debug/lines.vert", "debug/lines.frag");
+
+      shader.setUniform3f("u_color", vec3(1.f));
+      frustumMesh.draw(cam, shader);
+    }
   }
 }
 

@@ -1,8 +1,19 @@
 #pragma once
 
+#include <filesystem>
+#include <unordered_set>
+
 class Shader {
 public:
   Shader() = default;
+
+  Shader(const Shader&) = delete;
+  Shader(Shader&& other);
+
+  Shader& operator=(const Shader&) = delete;
+  Shader& operator=(Shader&& other);
+
+  ~Shader();
 
   [[nodiscard]] Shader(
     const fspath& vsPath,
@@ -24,8 +35,10 @@ public:
 
   GLint getUniformLoc(const std::string& name);
 
-  // NOTE: Call this before any GPU run (glDispatchCompute, glDrawElements, etc.)
-  void use() const;
+  bool needsReload();
+
+  void reload();
+  void use() const; // NOTE: Call this before any GPU run (glDispatchCompute, glDrawElements, etc.)
   void printUniforms() const;
 
   void setUniform1f (GLint loc, const GLfloat& n);
@@ -51,13 +64,17 @@ public:
   void setUniformMatrix4f(const std::string& name, const mat4& m);
 
 private:
-  static fspath directory;
+  static fspath rootDir;
+
   GLuint program = 0;
   std::unordered_map<std::string, GLint> locs;
+  std::unordered_map<GLenum, std::pair<fspath, std::filesystem::file_time_type>> shadersMetadata;
 
 private:
-  static GLuint load(fspath path, int type);
-  static GLuint compile(const fspath& path, int type);
-  static void link(GLuint program);
+  std::string load(std::unordered_set<std::string>& includedShaders, fspath path);
+  GLuint compile(fspath path, GLenum type);
+  void link(GLuint program);
+
+  void updateTimestamps();
 };
 

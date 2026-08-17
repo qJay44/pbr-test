@@ -1,65 +1,50 @@
 #include "meshes.hpp"
 
-#include "global.hpp"
+#include <cstdio>
+
+#include "MeshData.hpp"
+#include "../frustum/Frustum.hpp"
+#include "vertex.hpp"
 
 namespace meshes {
 
-Mesh line(vec3 p1, vec3 p2, vec3 color) {
-  std::vector<VertexPC> vertices{
-    {p1, color},
-    {p2, color}
-  };
+MeshArrays line(vec3 p1, vec3 p2) {
+  vertex::P vertices[] = {{p1}, {p2}};
 
-  return Mesh(vertices, GL_LINES, GL_STATIC_DRAW);
+  MeshData data;
+  data.vertices = (float*)vertices;
+  data.verticesSize = sizeof(vertices);
+  data.layout = vertices[0].getLayout();
+  data.mode = GL_LINES;
+
+  return MeshArrays(data);
 }
 
-Mesh axis() {
-  std::vector<VertexPC> vertices{
-    {{0.f, 0.f, 0.f}, global::red},
-    {{1.f, 0.f, 0.f}, global::red},
-    {{0.f, 0.f, 0.f}, global::green},
-    {{0.f, 1.f, 0.f}, global::green},
-    {{0.f, 0.f, 0.f}, global::blue},
-    {{0.f, 0.f, 1.f}, global::blue},
+MeshElements rectangle() {
+  vertex::PT vertices[] = {
+    {{-1.f, -1.f, 0.f}, {0.f, 0.f}},
+    {{-1.f,  1.f, 0.f}, {0.f, 1.f}},
+    {{ 1.f,  1.f, 0.f}, {1.f, 1.f}},
+    {{ 1.f, -1.f, 0.f}, {1.f, 0.f}},
   };
 
-  return Mesh(vertices, GL_LINES, GL_STATIC_DRAW);
-}
-
-Mesh plane(vec3 color, GLenum mode) {
-  std::vector<VertexPCTN> vertices{
-    {{-1.f, -1.f, 0.f}, color, {0.f, 0.f}, {1.f, 0.f, 0.f}},
-    {{-1.f,  1.f, 0.f}, color, {0.f, 1.f}, {1.f, 0.f, 0.f}},
-    {{ 1.f,  1.f, 0.f}, color, {1.f, 1.f}, {1.f, 0.f, 0.f}},
-    {{ 1.f, -1.f, 0.f}, color, {1.f, 0.f}, {1.f, 0.f, 0.f}},
+  GLuint indices[] = {
+    3, 2, 1,
+    1, 0, 3,
   };
 
-  std::vector<GLuint> indices;
+  MeshData data{};
+  data.vertices = (float*)vertices;
+  data.verticesSize = sizeof(vertices);
+  data.indices = indices;
+  data.indicesSize = sizeof(indices);
+  data.layout = vertices[0].getLayout();
 
-  switch (mode) {
-    case GL_TRIANGLES: {
-      indices = {
-        0, 1, 2,
-        2, 3, 0
-      };
-      break;
-    }
-    case GL_PATCHES: {
-      indices = {
-        0, 1,
-        2, 3,
-      };
-      break;
-    }
-    default:
-      error("[meshes::plane] Unhandled mode [{}]", mode);
-  }
-
-  return Mesh(vertices, indices, mode);
+  return MeshElements(data);
 }
 
-Mesh plane(size_t resolution, GLenum mode, vec3 up) {
-  std::vector<VertexPT> vertices;
+MeshElements plane(size_t resolution, GLenum mode, vec3 up) {
+  std::vector<vertex::PT> vertices;
   std::vector<GLuint> indices;
   size_t triIndex = 0;
 
@@ -117,7 +102,7 @@ Mesh plane(size_t resolution, GLenum mode, vec3 up) {
       float percentX = x / (resolution - 1.f);
       vec3 pX = (percentX - 0.5f) * 2.f * axisA;
 
-      VertexPT& vert = vertices[idx];
+      vertex::PT& vert = vertices[idx];
       vert.position = up + pX + pY;
       vert.texture = {percentX, percentY};
 
@@ -126,7 +111,105 @@ Mesh plane(size_t resolution, GLenum mode, vec3 up) {
     }
   }
 
-  return Mesh(vertices, indices, mode);
+  MeshData data;
+  data.vertices = (float*)vertices.data();
+  data.verticesSize = vertices.size() * sizeof(vertices[0]);
+  data.indices = indices.data();
+  data.indicesSize = indices.size() * sizeof(indices[0]);
+  data.layout = vertices[0].getLayout();
+  data.mode = mode;
+
+  return MeshElements(data);
+}
+
+MeshArrays circle(int resolution) {
+  float angleStep = (PI * 2.f) / resolution;
+  float theta = 0.f;
+  std::vector<vertex::P> vertices(resolution);
+
+  for (int i = 0; i < resolution; i++) {
+    vertices[i].position = {cos(theta), sin(theta), 0.f};
+    theta += angleStep;
+  }
+
+  MeshData data;
+  data.vertices = (float*)vertices.data();
+  data.verticesSize = vertices.size() * sizeof(vertices[0]);
+  data.layout = vertices[0].getLayout();
+  data.mode = GL_TRIANGLE_FAN;
+
+  return MeshArrays(data);
+}
+
+MeshData frustumMeshData(const Camera* cam) {
+  frustum::Frustum frustum(cam);
+
+  const float& aspect = cam->getAspectRatio();
+
+  vec3 camCrossUp = normalize(cross(cam->getForward(), cam->getLeft()));
+  float fovRad = glm::radians(cam->getFov());
+  float fovSize = 0.f;
+  if (fovRad >= PI_2) {
+    fovSize = 57.28f;
+    fovRad -= PI_2;
+  }
+  fovSize += tan(fovRad);
+
+  // NOTE: Frustum's forward is pointing towards +z
+
+  float farVSideHalf = cam->getFarPlane() * fovSize * 0.5f;
+  float farHSideHalf = farVSideHalf * aspect;
+  vec3 frontMultFar = cam->getForward() * cam->getFarPlane();
+  vec3 farPos = cam->getPosition() + frontMultFar;
+  vec3 farTR = farPos + cam->getLeft()  * farHSideHalf +  camCrossUp * farVSideHalf;
+  vec3 farTL = farPos + cam->getRight() * farHSideHalf +  camCrossUp * farVSideHalf;
+  vec3 farBL = farPos + cam->getRight() * farHSideHalf + -camCrossUp * farVSideHalf;
+  vec3 farBR = farPos + cam->getLeft()  * farHSideHalf + -camCrossUp * farVSideHalf;
+
+  float nearVSideHalf = cam->getNearPlane() * fovSize * 0.5f;
+  float nearHSideHalf = nearVSideHalf * aspect;
+  vec3 nearPos = cam->getPosition() + cam->getForward() * cam->getNearPlane();
+  vec3 nearTR = nearPos + cam->getLeft()  * nearHSideHalf +  camCrossUp * nearVSideHalf;
+  vec3 nearTL = nearPos + cam->getRight() * nearHSideHalf +  camCrossUp * nearVSideHalf;
+  vec3 nearBL = nearPos + cam->getRight() * nearHSideHalf + -camCrossUp * nearVSideHalf;
+  vec3 nearBR = nearPos + cam->getLeft()  * nearHSideHalf + -camCrossUp * nearVSideHalf;
+
+  std::vector<vertex::P> vertices {
+    // Near plane
+    {nearTR},
+    {nearTL},
+    {nearBL},
+    {nearBR},
+    // Far plane
+    {farTR},
+    {farTL},
+    {farBL},
+    {farBR},
+  };
+
+  std::vector<GLuint> indices {
+    // Near plane
+    0, 1,
+    1, 2,
+    2, 3,
+    3, 0,
+    // Far plane
+    4, 5,
+    5, 6,
+    6, 7,
+    7, 4,
+    // Connect corners
+    0, 4,
+    1, 5,
+    2, 6,
+    3, 7,
+  };
+
+  MeshData data(vertices, indices);
+  data.usage = GL_DYNAMIC_DRAW;
+  data.mode = GL_LINES;
+
+  return data;
 }
 
 } // namespace meshes

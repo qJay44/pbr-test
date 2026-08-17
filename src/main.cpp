@@ -1,3 +1,4 @@
+#include "engine/mesh/sphere/SphereMesh.hpp"
 #ifdef _WIN32
   #include <direct.h>
   #define CHDIR(p) _chdir(p);
@@ -9,12 +10,10 @@
 #include "global.hpp"
 #include "engine/gui/gui.hpp"
 #include "engine/Camera.hpp"
-#include "engine/Shader.hpp"
+#include "engine/ShadersWatcher.hpp"
 #include "engine/InputsHandler.hpp"
-#include "engine/mesh/meshes.hpp"
 #include "engine/Light.hpp"
 #include "engine/texture/Texture2D.hpp"
-#include "engine/mesh/sphere/SphereMesh.hpp"
 #include "utils/clrp.hpp"
 
 using global::window;
@@ -92,11 +91,15 @@ int main() {
 
   // ===== Shaders ============================================== //
 
-  Shader::setDirectoryLocation("src/engine/shaders");
+  Shader::setDirectoryLocation("res/shaders");
 
   Shader lightShader("light.vert", "light.frag");
   Shader linesShader("lines.vert", "lines.frag");
   Shader sphereShader("sphere.vert", "pbr.frag");
+
+  ShadersWatcher::add(&lightShader);
+  ShadersWatcher::add(&linesShader);
+  ShadersWatcher::add(&sphereShader);
 
   // ===== Cameras ============================================== //
 
@@ -126,9 +129,6 @@ int main() {
     0.f,
     1.f
   };
-
-  Mesh axis = meshes::axis();
-  axis.scale(1e4f);
 
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
@@ -167,6 +167,8 @@ int main() {
 
     global::profiler->clearTasks();
 
+    ShadersWatcher::check();
+
     light.update();
     light.setUniforms(sphereShader);
     sphereMaterial.setUniforms(sphereShader);
@@ -175,17 +177,21 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE + !global::wireframeMode);
 
-    Texture2D::getDebug0Tex().bind();
+    Texture2D::getDebugTex0().bind(0);
     sphere.draw(&cameraSpectate, sphereShader);
-    Texture2D::getDebug0Tex().unbind();
+    Texture2D::getDebugTex0().unbind();
 
     glDisable(GL_CULL_FACE);
 
     light.draw(&cameraSpectate, lightShader);
 
-    if (global::drawGlobalAxis)
-      axis.draw(&cameraSpectate, linesShader);
+    if (global::drawGlobalAxis) {
+      Mesh::drawDebugDirectionLine(&cameraSpectate, {}, {1e6f, 0.f, 0.f}, global::red);
+      Mesh::drawDebugDirectionLine(&cameraSpectate, {}, {0.f, 1e6f, 0.f}, global::green);
+      Mesh::drawDebugDirectionLine(&cameraSpectate, {}, {0.f, 0.f, 1e6f}, global::blue);
+    }
 
     // ============================================================ //
 

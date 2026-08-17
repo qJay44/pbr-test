@@ -1,13 +1,11 @@
 #pragma once
 
-#include "../Mesh.hpp"
+#include "../MeshElements.hpp"
 
 class SphereMesh {
 public:
-  struct SphereFaceChunk : public Mesh {
-    vec3 firstPos;
-    vec3 lastPos;
-    vec3 debugColor;
+  struct SphereFaceChunk {
+    MeshElements mesh;
 
     SphereFaceChunk() = default;
     SphereFaceChunk(vec3 up, vec2 start, const SphereMesh* sm);

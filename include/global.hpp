@@ -15,7 +15,7 @@ extern float dt;
 extern float time;
 
 extern bool guiFocused;
-extern bool drawWireframe;
+extern bool wireframeMode;
 extern bool drawNormals;
 extern bool drawGlobalAxis;
 

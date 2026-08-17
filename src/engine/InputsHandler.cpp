@@ -28,7 +28,7 @@ void InputsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int a
       break;
     case GLFW_KEY_1:
       if (action == GLFW_PRESS && !global::guiFocused)
-        global::drawWireframe = !global::drawWireframe;
+        global::wireframeMode = !global::wireframeMode;
       break;
     case GLFW_KEY_2:
       if (action == GLFW_PRESS && !global::guiFocused)

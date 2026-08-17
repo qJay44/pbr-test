@@ -13,16 +13,16 @@ void SphereFace::build(vec3 up, const SphereMesh* sm) {
 
 void SphereFace::translate(vec3 v) {
   for (SphereFaceChunk& chunk : chunks)
-    chunk.translate(v);
+    chunk.mesh.translate(v);
 }
 
 void SphereFace::scale(float s) {
   for (SphereFaceChunk& chunk : chunks)
-    chunk.scale(s);
+    chunk.mesh.scale(s);
 }
 
 void SphereFace::draw(const Camera* camera, Shader& shader) const {
   for (const SphereFaceChunk& chunk : chunks)
-    chunk.draw(camera, shader);
+    chunk.mesh.draw(camera, shader);
 }
 
