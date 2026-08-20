@@ -13,7 +13,6 @@
 #include "engine/ShadersWatcher.hpp"
 #include "engine/InputsHandler.hpp"
 #include "engine/Light.hpp"
-#include "engine/texture/Texture2D.hpp"
 #include "utils/clrp.hpp"
 
 using global::window;
@@ -125,9 +124,9 @@ int main() {
   Material sphereMaterial{
     vec3(1.f, 0.f, 0.f),
     vec3(0.f),
-    vec3(0.f),
     0.f,
-    1.f
+    1.f,
+    f0::IDX_IRON
   };
 
   glCullFace(GL_BACK);
@@ -179,9 +178,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE + !global::wireframeMode);
 
-    Texture2D::getDebugTex0().bind(0);
     sphere.draw(&cameraSpectate, sphereShader);
-    Texture2D::getDebugTex0().unbind();
 
     glDisable(GL_CULL_FACE);
 

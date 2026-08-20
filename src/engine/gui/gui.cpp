@@ -84,13 +84,30 @@ void gui::draw() {
 
   // ===== Material ====================================================================================== //
 
-  assert(cubeMaterialPtr);
+  assert(sphereMaterialPtr);
   if (CollapsingHeader("Sphere material")) {
     SliderFloat("Metallic", &sphereMaterialPtr->metallic, 0.f, 1.f);
-    SliderFloat("Roughness", &sphereMaterialPtr->roughness, 0.f, 1.f);
-    SliderFloat3("Base reflectivity", glm::value_ptr(sphereMaterialPtr->baseReflectivity), 0.f, 1.f);
+    SliderFloat("Roughness", &sphereMaterialPtr->roughness, 0.04f, 1.f);
     ColorEdit3("Albedo", glm::value_ptr(sphereMaterialPtr->albedo));
     ColorEdit3("Emissivity", glm::value_ptr(sphereMaterialPtr->emissivity));
+
+    {
+      static f0::index& selectedIdx = sphereMaterialPtr->baseReflectivityIdx;
+
+      if (BeginCombo("Base reflectivity", f0::all[selectedIdx].name)) {
+        for (int i = 0; i < f0::IDX_COUNT; i++) {
+          bool isSelected = selectedIdx == i;
+
+          if (Selectable(f0::all[i].name, isSelected))
+            selectedIdx = (f0::index)i;
+
+          if (isSelected)
+            SetItemDefaultFocus();
+        }
+
+        EndCombo();
+      }
+    }
   }
 
   // ===== Light ========================================================================================= //
