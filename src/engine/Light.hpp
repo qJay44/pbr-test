@@ -7,7 +7,7 @@
 
 class Light {
 public:
-  Light(vec3 position, float radius = 30.f, vec3 color = {1.f, 1.f, 1.f});
+  Light(vec3 position, vec3 color = {1.f, 1.f, 1.f}, vec3 multiplier = {1.f, 1.f, 1.f}, float radius = 30.f);
 
   const vec3& getPosition() const;
   const vec3& getColor() const;
@@ -23,7 +23,8 @@ private:
   MeshElements mesh = meshes::plane(2, GL_TRIANGLES, global::forward);
 
   vec3 position;
-  float radius;
   vec3 color;
+  vec3 multiplier{1.f}; // Lumens?
+  float radius;
 };
 

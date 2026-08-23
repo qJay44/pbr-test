@@ -115,7 +115,7 @@ int main() {
 
   // ============================================================ //
 
-  Light light({0.f, 100.f, 0.f});
+  Light light({0.f, 100.f, 0.f}, vec3(1.f), vec3(3000.f));
 
   SphereMesh sphere(5, 20, 10.f);
   sphere.translate(vec3(50.f));

@@ -1,7 +1,7 @@
 #include "Light.hpp"
 
-Light::Light(vec3 position, float radius, vec3 color)
-  : position(position), radius(radius), color(color) {}
+Light::Light(vec3 position, vec3 colorGammaSpace, vec3 multiplier, float radius)
+  : position(position), color(glm::pow(colorGammaSpace, vec3(2.2f))), multiplier(multiplier), radius(radius) {}
 
 const vec3& Light::getPosition() const { return position; }
 const vec3& Light::getColor() const { return color; }
@@ -11,9 +11,10 @@ void Light::update() {
 }
 
 void Light::setUniforms(Shader& shader) const {
-  shader.setUniform1f("u_lightRadius", radius);
-  shader.setUniform3f("u_lightPos", position);
-  shader.setUniform3f("u_lightColor", color);
+  shader.setUniform3f("u_light.pos", position);
+  shader.setUniform3f("u_light.color", color);
+  shader.setUniform3f("u_light.multiplier", multiplier);
+  shader.setUniform1f("u_light.radius", radius);
 }
 
 void Light::draw(const Camera* camera, Shader& shader) const {

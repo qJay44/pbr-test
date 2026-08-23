@@ -1,5 +1,6 @@
 #include "gui.hpp"
 
+#include "glm/exponential.hpp"
 #include "imgui.h"
 // #include "implot.h"
 #include "backends/imgui_impl_glfw.h"
@@ -88,7 +89,14 @@ void gui::draw() {
   if (CollapsingHeader("Sphere material")) {
     SliderFloat("Metallic", &sphereMaterialPtr->metallic, 0.f, 1.f);
     SliderFloat("Roughness", &sphereMaterialPtr->roughness, 0.04f, 1.f);
-    ColorEdit3("Albedo", glm::value_ptr(sphereMaterialPtr->albedo));
+
+    {
+      static vec3 srgb = glm::pow(sphereMaterialPtr->albedo, vec3(1.f / 2.2f));
+
+      if (ColorEdit3("Albedo", glm::value_ptr(srgb)))
+        sphereMaterialPtr->albedo = glm::pow(srgb, vec3(2.2f));
+    }
+
     ColorEdit3("Emissivity", glm::value_ptr(sphereMaterialPtr->emissivity));
 
     {
@@ -114,9 +122,26 @@ void gui::draw() {
 
   assert(lightPtr);
   if (CollapsingHeader("Light")) {
+    static bool singleMultiplier = true;
+
     DragFloat3("Position", glm::value_ptr(lightPtr->position));
-    DragFloat("Radius", &lightPtr->radius, 1.f, 0.f);
     ColorEdit3("Color", glm::value_ptr(lightPtr->color));
+
+    Spacing();
+    Checkbox("Single", &singleMultiplier);
+    if (singleMultiplier) {
+      static float mult = lightPtr->multiplier.x;
+
+      if (DragFloat("Multiplier", &mult))
+        lightPtr->multiplier = vec3(mult);
+      } else {
+        DragFloat("Red multiplier", &lightPtr->multiplier.r);
+        DragFloat("Green multiplier", &lightPtr->multiplier.g);
+        DragFloat("Blue multiplier", &lightPtr->multiplier.b);
+    }
+
+    Spacing();
+    DragFloat("Radius", &lightPtr->radius, 1.f, 0.f);
   };
 
   // ===== Other ========================================================================================= //
