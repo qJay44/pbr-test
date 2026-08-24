@@ -1,4 +1,3 @@
-#include "engine/mesh/sphere/SphereMesh.hpp"
 #ifdef _WIN32
   #include <direct.h>
   #define CHDIR(p) _chdir(p);
@@ -13,6 +12,8 @@
 #include "engine/ShadersWatcher.hpp"
 #include "engine/InputsHandler.hpp"
 #include "engine/Light.hpp"
+#include "engine/mesh/PlaneModel.hpp"
+#include "engine/mesh/meshes.hpp"
 #include "utils/clrp.hpp"
 
 using global::window;
@@ -95,10 +96,12 @@ int main() {
   Shader lightShader("light.vert", "light.frag");
   Shader linesShader("lines.vert", "lines.frag");
   Shader sphereShader("sphere.vert", "pbr.frag");
+  Shader planeShader("plane.vert", "pbr.frag");
 
   ShadersWatcher::add(&lightShader);
   ShadersWatcher::add(&linesShader);
   ShadersWatcher::add(&sphereShader);
+  ShadersWatcher::add(&planeShader);
 
   // ===== Cameras ============================================== //
 
@@ -117,24 +120,17 @@ int main() {
 
   Light light({0.f, 100.f, 0.f}, vec3(1.f), vec3(3000.f));
 
-  SphereMesh sphere(5, 20, 10.f);
-  sphere.translate(vec3(50.f));
-  sphere.scale(2.5f);
-
-  Material sphereMaterial{
-    vec3(1.f, 0.f, 0.f),
-    vec3(0.f),
-    0.f,
-    1.f,
-    f0::IDX_IRON
-  };
+  PlaneModel plane(meshes::plane(128));
+  plane.mesh.translate(vec3(200.f, 0.f, 0.f));
+  plane.mesh.setMatScaleXZ(50.f);
+  plane.material.loadFrom("res/tex/lava-and-rock");
+  // sphere.loadMaterial("res/tex/worn-medieval-armor");
 
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
 
   gui::camPtr = &cameraSpectate;
   gui::lightPtr = &light;
-  gui::sphereMaterialPtr = &sphereMaterial;
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -170,7 +166,7 @@ int main() {
 
     light.update();
     light.setUniforms(sphereShader);
-    sphereMaterial.setUniforms(sphereShader);
+    light.setUniforms(planeShader);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -178,7 +174,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE + !global::wireframeMode);
 
-    sphere.draw(&cameraSpectate, sphereShader);
+    plane.draw(&cameraSpectate, planeShader);
 
     glDisable(GL_CULL_FACE);
 

@@ -1,6 +1,5 @@
 #include "gui.hpp"
 
-#include "glm/exponential.hpp"
 #include "imgui.h"
 // #include "implot.h"
 #include "backends/imgui_impl_glfw.h"
@@ -16,7 +15,7 @@ static bool infoCollapsed = true;
 
 Camera* gui::camPtr = nullptr;
 Light* gui::lightPtr = nullptr;
-Material* gui::sphereMaterialPtr = nullptr;
+SphereModel* gui::spherePtr = nullptr;
 
 u16 gui::fps = 1;
 
@@ -85,38 +84,26 @@ void gui::draw() {
 
   // ===== Material ====================================================================================== //
 
-  assert(sphereMaterialPtr);
-  if (CollapsingHeader("Sphere material")) {
-    SliderFloat("Metallic", &sphereMaterialPtr->metallic, 0.f, 1.f);
-    SliderFloat("Roughness", &sphereMaterialPtr->roughness, 0.04f, 1.f);
+  // assert(spherePtr);
+  // if (CollapsingHeader("Sphere")) {
+  //   {
+  //     static f0::index& selectedIdx = spherePtr->material.baseReflectivityIdx;
 
-    {
-      static vec3 srgb = glm::pow(sphereMaterialPtr->albedo, vec3(1.f / 2.2f));
+  //     if (BeginCombo("Base reflectivity", f0::all[selectedIdx].name)) {
+  //       for (int i = 0; i < f0::IDX_COUNT; i++) {
+  //         bool isSelected = selectedIdx == i;
 
-      if (ColorEdit3("Albedo", glm::value_ptr(srgb)))
-        sphereMaterialPtr->albedo = glm::pow(srgb, vec3(2.2f));
-    }
+  //         if (Selectable(f0::all[i].name, isSelected))
+  //           selectedIdx = (f0::index)i;
 
-    ColorEdit3("Emissivity", glm::value_ptr(sphereMaterialPtr->emissivity));
+  //         if (isSelected)
+  //           SetItemDefaultFocus();
+  //       }
 
-    {
-      static f0::index& selectedIdx = sphereMaterialPtr->baseReflectivityIdx;
-
-      if (BeginCombo("Base reflectivity", f0::all[selectedIdx].name)) {
-        for (int i = 0; i < f0::IDX_COUNT; i++) {
-          bool isSelected = selectedIdx == i;
-
-          if (Selectable(f0::all[i].name, isSelected))
-            selectedIdx = (f0::index)i;
-
-          if (isSelected)
-            SetItemDefaultFocus();
-        }
-
-        EndCombo();
-      }
-    }
-  }
+  //       EndCombo();
+  //     }
+  //   }
+  // }
 
   // ===== Light ========================================================================================= //
 

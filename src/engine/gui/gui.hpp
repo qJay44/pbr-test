@@ -1,12 +1,12 @@
 #pragma once
 
 #include "../Light.hpp"
-#include "../mesh/Material.hpp"
+#include "../mesh/sphere/SphereModel.hpp"
 
 struct gui {
   static Camera* camPtr;
   static Light* lightPtr;
-  static Material* sphereMaterialPtr;
+  static SphereModel* spherePtr;
   static u16 fps;
 
   static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
