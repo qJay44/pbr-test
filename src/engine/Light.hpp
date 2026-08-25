@@ -3,8 +3,6 @@
 #include "mesh/MeshElements.hpp"
 #include "mesh/meshes.hpp"
 
-#include "global.hpp"
-
 class Light {
 public:
   Light(vec3 position, vec3 color = {1.f, 1.f, 1.f}, vec3 multiplier = {1.f, 1.f, 1.f}, float radius = 30.f);
@@ -20,7 +18,7 @@ public:
 private:
   friend struct gui;
 
-  MeshElements mesh = meshes::plane(2, GL_TRIANGLES, global::forward);
+  MeshElements mesh = meshes::plane(2, GL_TRIANGLES);
 
   vec3 position;
   vec3 color;

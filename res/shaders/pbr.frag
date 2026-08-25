@@ -5,6 +5,7 @@
 in vec3 v_worldPos;
 in vec3 v_normal;
 in vec2 v_uv;
+in mat3 v_tbn;
 
 out vec4 FragColor;
 
@@ -29,7 +30,6 @@ layout(binding = 6) uniform sampler2D u_texRoughness;
 uniform LightPoint u_light;
 uniform vec3 u_camPos;
 uniform vec3 u_baseReflectivity;
-uniform float u_time;
 
 const float epsilon = 1e-6f;
 
@@ -89,17 +89,7 @@ vec3 BRDF_CookTorrance(Material material, vec3 V, vec3 L, vec3 H) {
 vec3 getNormalFromMap(sampler2D normalMap, vec2 uv) {
   vec3 tangentNormal = texture(normalMap, uv).rgb * 2.f - 1.f;
 
-  vec3 q1 = dFdx(v_worldPos);
-  vec3 q2 = dFdy(v_worldPos);
-  vec2 st1 = dFdx(uv);
-  vec2 st2 = dFdy(uv);
-
-  vec3 N = normalize(v_normal);
-  vec3 T = normalize(q1 * st2.t - q2 * st1.t);
-  vec3 B = -normalize(cross(N, T));
-  mat3 TBN = mat3(T, B, N);
-
-  return normalize(TBN * tangentNormal);
+  return normalize(v_tbn * tangentNormal);
 }
 
 Material getMaterial(vec2 uv) {
@@ -120,7 +110,7 @@ void main() {
   vec3 L = normalize(u_light.pos - v_worldPos); // Towards light direction (omega i)
   vec3 H = normalize(V + L);                    // Halfway vector
 
-  Material material = getMaterial(v_uv + u_time * 0.01f);
+  Material material = getMaterial(v_uv);
 
   float lightDist = distance(u_light.pos, v_worldPos);
   float attenuation = 1.f / sq(lightDist);

@@ -95,12 +95,10 @@ int main() {
 
   Shader lightShader("light.vert", "light.frag");
   Shader linesShader("lines.vert", "lines.frag");
-  Shader sphereShader("sphere.vert", "pbr.frag");
-  Shader planeShader("plane.vert", "pbr.frag");
+  Shader planeShader("plane.vert", "pbr.frag", "tbn.geom");
 
   ShadersWatcher::add(&lightShader);
   ShadersWatcher::add(&linesShader);
-  ShadersWatcher::add(&sphereShader);
   ShadersWatcher::add(&planeShader);
 
   // ===== Cameras ============================================== //
@@ -165,7 +163,6 @@ int main() {
     ShadersWatcher::check();
 
     light.update();
-    light.setUniforms(sphereShader);
     light.setUniforms(planeShader);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);

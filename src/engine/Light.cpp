@@ -1,5 +1,7 @@
 #include "Light.hpp"
 
+#include "glm/gtc/quaternion.hpp"
+
 Light::Light(vec3 position, vec3 colorGammaSpace, vec3 multiplier, float radius)
   : position(position), color(glm::pow(colorGammaSpace, vec3(2.2f))), multiplier(multiplier), radius(radius) {}
 

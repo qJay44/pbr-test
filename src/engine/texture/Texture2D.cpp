@@ -5,7 +5,7 @@ Texture2D Texture2D::debugTex0;
 const Texture2D& Texture2D::getDebugTex0() {
   if (debugTex0.id == 0) {
     debugTex0 = Texture2D(
-      {"res/tex/debug/uvChecker.jpg", IMAGE2D_LOAD_STB , true},
+      {"res/tex/debug/uvChecker.jpg", IMAGE2D_LOAD_STB , false},
       {
         .minFilter = GL_NEAREST,
         .magFilter = GL_NEAREST,
