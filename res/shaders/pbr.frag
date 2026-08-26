@@ -27,7 +27,10 @@ layout(binding = 4) uniform sampler2D u_texMetallic;
 layout(binding = 5) uniform sampler2D u_texNormal;
 layout(binding = 6) uniform sampler2D u_texRoughness;
 
-uniform LightPoint u_light;
+uniform LightPoint u_light0;
+uniform LightPoint u_light1;
+uniform LightPoint u_light2;
+uniform LightPoint u_light3;
 uniform vec3 u_camPos;
 uniform vec3 u_baseReflectivity;
 
@@ -86,10 +89,25 @@ vec3 BRDF_CookTorrance(Material material, vec3 V, vec3 L, vec3 H) {
   return Kd * lambert + Ks;
 }
 
-vec3 getNormalFromMap(sampler2D normalMap, vec2 uv) {
+vec3 getNormalFromTangentMap(sampler2D normalMap, vec2 uv) {
   vec3 tangentNormal = texture(normalMap, uv).rgb * 2.f - 1.f;
 
   return normalize(v_tbn * tangentNormal);
+}
+vec3 getNormalFromTangentMapFrag(sampler2D normalMap, vec2 uv) {
+  vec3 tangentNormal = texture(normalMap, uv).rgb * 2.f - 1.f;
+
+  vec3 q1 = dFdx(v_worldPos);
+  vec3 q2 = dFdy(v_worldPos);
+  vec2 st1 = dFdx(uv);
+  vec2 st2 = dFdy(uv);
+
+  vec3 N = normalize(v_normal);
+  vec3 T = normalize(q1 * st2.t - q2 * st1.t);
+  vec3 B = -normalize(cross(N, T));
+  mat3 TBN = mat3(T, B, N);
+
+  return normalize(TBN * tangentNormal);
 }
 
 Material getMaterial(vec2 uv) {
@@ -97,7 +115,7 @@ Material getMaterial(vec2 uv) {
   material.albedo           = texture(u_texAlbedo, uv).rgb;
   material.emissivity       = texture(u_texEmissive, uv).rgb;
   material.baseReflectivity = u_baseReflectivity;
-  material.normal           = getNormalFromMap(u_texNormal, uv);
+  material.normal           = getNormalFromTangentMapFrag(u_texNormal, uv);
   material.metallic         = texture(u_texMetallic, uv).r;
   material.roughness        = texture(u_texRoughness, uv).r;
   material.ao               = texture(u_texAmbientOcclusion, uv).r;
@@ -107,21 +125,30 @@ Material getMaterial(vec2 uv) {
 
 void main() {
   vec3 V = normalize(u_camPos - v_worldPos);    // View vector (omega 0)
-  vec3 L = normalize(u_light.pos - v_worldPos); // Towards light direction (omega i)
-  vec3 H = normalize(V + L);                    // Halfway vector
 
   Material material = getMaterial(v_uv);
+  LightPoint lights[4] = { u_light0, u_light1, u_light2, u_light3 }; // HACK: uuuughh
+  vec3 Lo = vec3(0.f);
+  float dw = 1.f / 4;
 
-  float lightDist = distance(u_light.pos, v_worldPos);
-  float attenuation = 1.f / sq(lightDist);
-  vec3 radiance = u_light.color * u_light.multiplier * attenuation;
+  for (int i = 0; i < 4; i++) {
+    LightPoint light = lights[i];
 
-  vec3 brdf = BRDF_CookTorrance(material, V, L, H);
-  vec3 Lo = material.emissivity + brdf * radiance * dot0(material.normal, L);
+    vec3 L = normalize(light.pos - v_worldPos); // Towards light direction (omega i)
+    vec3 H = normalize(V + L);                  // Halfway vector
 
-  vec3 ambient = 0.03f * material.albedo * material.ao;
-  vec3 color = ambient + Lo;
+    float lightDist = distance(light.pos, v_worldPos);
+    float attenuation = 1.f / sq(lightDist);
+    vec3 radiance = light.color * light.multiplier * attenuation;
 
+    vec3 brdf = BRDF_CookTorrance(material, V, L, H);
+    Lo += brdf * radiance * dot0(material.normal, L);
+  }
+
+  // vec3 ambientColor = mix(material.albedo, material.baseReflectivity, material.metallic);
+  // vec3 ambient = 0.01f * ambientColor * material.ao;
+
+  vec3 color = Lo + material.emissivity;
   color /= color + vec3(1.f);
   color = pow(color, vec3(1.f / 2.2f));
 

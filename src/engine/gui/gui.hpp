@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Light.hpp"
+#include "../LightPoint.hpp"
 #include "../mesh/sphere/SphereSegmented.hpp"
 
 struct gui {
   static Camera* camPtr;
-  static Light* lightPtr;
+  static LightPoint* lightPtr;
   static SphereSegmented* spherePtr;
   static u16 fps;
 

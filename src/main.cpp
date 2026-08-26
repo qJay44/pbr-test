@@ -11,7 +11,7 @@
 #include "engine/Camera.hpp"
 #include "engine/ShadersWatcher.hpp"
 #include "engine/InputsHandler.hpp"
-#include "engine/Light.hpp"
+#include "engine/LightPoint.hpp"
 #include "engine/mesh/sphere/SphereSegmented.hpp"
 #include "utils/clrp.hpp"
 
@@ -115,7 +115,10 @@ int main() {
 
   // ============================================================ //
 
-  Light light({0.f, 100.f, 0.f}, vec3(1.f), vec3(3000.f));
+  LightPoint light0({50.f, 100.f, 50.f}, vec3(1.f), vec3(3000.f));
+  LightPoint light1({100.f, 0.f, 0.f}, global::red, vec3(3000.f));
+  LightPoint light2({0.f, 100.f, 0.f}, global::green, vec3(3000.f));
+  LightPoint light3({0.f, 0.f, 100.f}, global::blue, vec3(3000.f));
 
   SphereSegmented sphere(128, 10.f);
   sphere.loadMaterial("res/tex/materials/lava-and-rock");
@@ -124,7 +127,7 @@ int main() {
   glFrontFace(GL_CCW);
 
   gui::camPtr = &cameraSpectate;
-  gui::lightPtr = &light;
+  gui::lightPtr = &light0;
   gui::spherePtr = &sphere;
 
   // Render loop
@@ -159,8 +162,15 @@ int main() {
 
     ShadersWatcher::check();
 
-    light.update();
-    light.setUniforms(sphereShader);
+    light0.update();
+    light1.update();
+    light2.update();
+    light3.update();
+
+    light0.setUniforms(sphereShader);
+    light1.setUniforms(sphereShader);
+    light2.setUniforms(sphereShader);
+    light3.setUniforms(sphereShader);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -172,7 +182,10 @@ int main() {
 
     glDisable(GL_CULL_FACE);
 
-    light.draw(&cameraSpectate, lightShader);
+    light0.draw(&cameraSpectate, lightShader);
+    light1.draw(&cameraSpectate, lightShader);
+    light2.draw(&cameraSpectate, lightShader);
+    light3.draw(&cameraSpectate, lightShader);
 
     if (global::drawGlobalAxis) {
       Mesh::drawDebugDirectionLine(&cameraSpectate, {}, {1e6f, 0.f, 0.f}, global::red);

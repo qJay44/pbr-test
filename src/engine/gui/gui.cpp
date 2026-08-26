@@ -15,7 +15,7 @@ static bool configCollapsed = true;
 static bool infoCollapsed = true;
 
 Camera* gui::camPtr = nullptr;
-Light* gui::lightPtr = nullptr;
+LightPoint* gui::lightPtr = nullptr;
 SphereSegmented* gui::spherePtr = nullptr;
 
 u16 gui::fps = 1;
