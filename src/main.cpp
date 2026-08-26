@@ -12,8 +12,7 @@
 #include "engine/ShadersWatcher.hpp"
 #include "engine/InputsHandler.hpp"
 #include "engine/Light.hpp"
-#include "engine/mesh/PlaneModel.hpp"
-#include "engine/mesh/meshes.hpp"
+#include "engine/mesh/sphere/SphereSegmented.hpp"
 #include "utils/clrp.hpp"
 
 using global::window;
@@ -95,11 +94,11 @@ int main() {
 
   Shader lightShader("light.vert", "light.frag");
   Shader linesShader("lines.vert", "lines.frag");
-  Shader planeShader("plane.vert", "pbr.frag", "tbn.geom");
+  Shader sphereShader("sphere/segmented.vert", "pbr.frag", "tbn.geom");
 
   ShadersWatcher::add(&lightShader);
   ShadersWatcher::add(&linesShader);
-  ShadersWatcher::add(&planeShader);
+  ShadersWatcher::add(&sphereShader);
 
   // ===== Cameras ============================================== //
 
@@ -118,17 +117,15 @@ int main() {
 
   Light light({0.f, 100.f, 0.f}, vec3(1.f), vec3(3000.f));
 
-  PlaneModel plane(meshes::plane(128));
-  plane.mesh.translate(vec3(200.f, 0.f, 0.f));
-  plane.mesh.setMatScaleXZ(50.f);
-  plane.material.loadFrom("res/tex/lava-and-rock");
-  // sphere.loadMaterial("res/tex/worn-medieval-armor");
+  SphereSegmented sphere(128, 10.f);
+  sphere.loadMaterial("res/tex/materials/lava-and-rock");
 
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
 
   gui::camPtr = &cameraSpectate;
   gui::lightPtr = &light;
+  gui::spherePtr = &sphere;
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -163,7 +160,7 @@ int main() {
     ShadersWatcher::check();
 
     light.update();
-    light.setUniforms(planeShader);
+    light.setUniforms(sphereShader);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -171,7 +168,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE + !global::wireframeMode);
 
-    plane.draw(&cameraSpectate, planeShader);
+    sphere.draw(&cameraSpectate, sphereShader);
 
     glDisable(GL_CULL_FACE);
 

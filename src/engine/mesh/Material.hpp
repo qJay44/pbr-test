@@ -22,6 +22,7 @@ struct Material {
 
   f0::index baseReflectivityIdx = f0::IDX_IRON;
   std::array<Texture2D, 7> textures{};
+  fspath currFolder;
 
   void loadFrom(fspath folderPath) {
     namespace fs = std::filesystem;
@@ -41,7 +42,7 @@ struct Material {
       textures[IDX_AO]         = Texture2D(image2D(path_to("ao.png")),        descRed);
       textures[IDX_HEIGHT]     = Texture2D(image2D(path_to("height.png")),    descRed);
       textures[IDX_METALLIC]   = Texture2D(image2D(path_to("metallic.png")),  descRed);
-      textures[IDX_NORMAL]     = Texture2D(image2D(path_to("normal.png")),    descRGB);
+      textures[IDX_NORMAL]     = Texture2D(image2D(path_to("normal-dx.png")), descRGB);
       textures[IDX_ROUGHNESS]  = Texture2D(image2D(path_to("roughness.png")), descRed);
 
       fspath emissivePath = path_to("emissive.png");
@@ -49,6 +50,8 @@ struct Material {
         textures[IDX_EMISSIVITY] = Texture2D(image2D(emissivePath),  descRGBA);
       else
         textures[IDX_EMISSIVITY].initStorage({1, 1}, {});
+
+      currFolder = folderPath;
 
     } else {
       error("[Material::loadFrom] Provided folder ({}) is invalid", folderPath.string());

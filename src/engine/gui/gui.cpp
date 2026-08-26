@@ -7,6 +7,7 @@
 
 #include "glm/gtc/type_ptr.hpp"
 #include "global.hpp"
+#include <filesystem>
 
 using namespace ImGui;
 
@@ -15,7 +16,7 @@ static bool infoCollapsed = true;
 
 Camera* gui::camPtr = nullptr;
 Light* gui::lightPtr = nullptr;
-SphereModel* gui::spherePtr = nullptr;
+SphereSegmented* gui::spherePtr = nullptr;
 
 u16 gui::fps = 1;
 
@@ -84,26 +85,52 @@ void gui::draw() {
 
   // ===== Material ====================================================================================== //
 
-  // assert(spherePtr);
-  // if (CollapsingHeader("Sphere")) {
-  //   {
-  //     static f0::index& selectedIdx = spherePtr->material.baseReflectivityIdx;
+  assert(spherePtr);
+  if (CollapsingHeader("Sphere")) {
+    SliderFloat("Radius", &spherePtr->radius, 1.f, 100.f);
+    DragFloat("Height scale", &spherePtr->heightScale);
 
-  //     if (BeginCombo("Base reflectivity", f0::all[selectedIdx].name)) {
-  //       for (int i = 0; i < f0::IDX_COUNT; i++) {
-  //         bool isSelected = selectedIdx == i;
+    {
+      static fspath selectedPath = spherePtr->material.currFolder;
 
-  //         if (Selectable(f0::all[i].name, isSelected))
-  //           selectedIdx = (f0::index)i;
+      if (BeginCombo("Material", selectedPath.lexically_normal().filename().string().c_str())) {
+        namespace fs = std::filesystem;
+        for (const auto& entry : fs::directory_iterator("res/tex/materials")) {
+          if (entry.is_directory()) {
+            bool isSelected = selectedPath == entry.path();
 
-  //         if (isSelected)
-  //           SetItemDefaultFocus();
-  //       }
+            if (Selectable(entry.path().lexically_normal().filename().string().c_str(), isSelected)) {
+              selectedPath = entry.path();
+              spherePtr->material.loadFrom(selectedPath);
+            }
 
-  //       EndCombo();
-  //     }
-  //   }
-  // }
+            if (isSelected)
+              SetItemDefaultFocus();
+          }
+        }
+
+        EndCombo();
+      }
+    }
+
+    {
+      static f0::index& selectedIdx = spherePtr->material.baseReflectivityIdx;
+
+      if (BeginCombo("Base reflectivity", f0::all[selectedIdx].name)) {
+        for (int i = 0; i < f0::IDX_COUNT; i++) {
+          bool isSelected = selectedIdx == i;
+
+          if (Selectable(f0::all[i].name, isSelected))
+            selectedIdx = (f0::index)i;
+
+          if (isSelected)
+            SetItemDefaultFocus();
+        }
+
+        EndCombo();
+      }
+    }
+  }
 
   // ===== Light ========================================================================================= //
 
