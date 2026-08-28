@@ -14,8 +14,9 @@ public:
   void unbind() const;
   void clear();
 
-  const GLuint& getId() const;
-  const GLenum& getTarget() const;
+  GLuint getId() const;
+  GLenum getTarget() const;
+  GLenum getInternalFormat() const;
 
   ivec2 getSize(GLint mipLevel) const;
 

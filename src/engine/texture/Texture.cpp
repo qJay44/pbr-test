@@ -38,8 +38,15 @@ void Texture::clear() {
   id = 0;
 }
 
-const GLuint& Texture::getId() const { return id; }
-const GLenum& Texture::getTarget() const { return target; }
+GLuint Texture::getId() const { return id; }
+GLenum Texture::getTarget() const { return target; }
+
+GLenum Texture::getInternalFormat() const {
+  GLint internalFormat;
+  glGetTextureLevelParameteriv(id, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFormat);
+
+  return internalFormat;
+}
 
 ivec2 Texture::getSize(GLint mipLevel) const {
   ivec2 res;
