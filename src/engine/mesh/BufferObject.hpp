@@ -16,8 +16,9 @@ struct BufferObject {
 
   BufferObject() = default;
 
-  BufferObject(GLenum target, GLsizei size = 1) : target(target) {
-    gen(size);
+  BufferObject(GLenum target, GLsizei size = 1, bool instaGen = false) : target(target) {
+    if (instaGen)
+      gen(size);
   }
 
   BufferObject(const BufferObject&) = delete;

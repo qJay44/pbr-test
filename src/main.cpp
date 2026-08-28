@@ -1,5 +1,3 @@
-#include "engine/texture/TextureCubemap.hpp"
-#include <cstdio>
 #ifdef _WIN32
   #include <direct.h>
   #define CHDIR(p) _chdir(p);
@@ -15,6 +13,7 @@
 #include "engine/InputsHandler.hpp"
 #include "engine/LightPoint.hpp"
 #include "engine/mesh/sphere/SphereSegmented.hpp"
+#include "engine/environment.hpp"
 #include "utils/clrp.hpp"
 
 using global::window;
@@ -127,9 +126,8 @@ int main() {
   SphereSegmented sphere(128, 10.f);
   sphere.loadMaterial("res/tex/materials/lava-and-rock");
 
-  Texture2D texEnvHDR(image2D("res/tex/env/cedar_bridge_sunset_1_4k.hdr", IMAGE2D_LOAD_STBF, true), {.internalFormat = GL_RGB16F, .type = GL_FLOAT});
-  TextureCubemap texEnvCubemap = TextureCubemap::convertEquirectangularHDR(texEnvHDR);
-  MeshElements skyboxCube = MeshElements::loadFromOBJ("res/obj/Cube.obj");
+  environment::init();
+  environment::loadFromImageEquirectangularHDR("res/tex/env/cedar_bridge_sunset_1_4k.hdr");
 
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
@@ -185,12 +183,8 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE + !global::wireframeMode);
 
-    glDepthFunc(GL_LEQUAL);
-    glDisable(GL_CULL_FACE);
-    texEnvHDR.bind(0);
-    skyboxCube.draw(&cameraSpectate, skyboxHdrShader);
+    environment::draw(&cameraSpectate, skyboxHdrShader);
 
-    glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     sphere.draw(&cameraSpectate, sphereShader);

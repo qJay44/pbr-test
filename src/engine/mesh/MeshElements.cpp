@@ -137,6 +137,8 @@ MeshElements::MeshElements(const MeshData& data)  {
   elementCount = data.indicesSize / sizeof(data.indices[0]);
 
   vao.gen();
+  vbo.gen(1);
+  ebo.gen(1);
 
   vao.bind();
   vbo.allocate(data.vertices, data.verticesSize, data.usage);

@@ -10,12 +10,13 @@ struct VAO {
   }
 
   static const VAO& getEmpty() {
-    static VAO emptyVAO{1};
+    static VAO emptyVAO(1, true);
     return emptyVAO;
   }
 
-  VAO(GLsizei size = 1) {
-    gen(size);
+  VAO(GLsizei size = 1, bool instaGen = false) {
+    if (instaGen)
+      gen(size);
   }
 
   VAO(const VAO&) = delete;

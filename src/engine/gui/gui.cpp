@@ -5,9 +5,11 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
+#include <filesystem>
+
 #include "glm/gtc/type_ptr.hpp"
 #include "global.hpp"
-#include <filesystem>
+#include "../environment.hpp"
 
 using namespace ImGui;
 
@@ -162,6 +164,28 @@ void gui::draw() {
 
   if (CollapsingHeader("Other")) {
     Checkbox("Show global axis", &global::drawGlobalAxis);
+    {
+      static fspath selectedPath = environment::_lastLoadedImage;
+
+      if (BeginCombo("Environment", selectedPath.lexically_normal().filename().string().c_str())) {
+        namespace fs = std::filesystem;
+        for (const auto& entry : fs::directory_iterator("res/tex/env")) {
+          if (entry.is_regular_file()) {
+            bool isSelected = selectedPath == entry.path();
+
+            if (Selectable(entry.path().lexically_normal().filename().string().c_str(), isSelected)) {
+              selectedPath = entry.path();
+              environment::loadFromImageEquirectangularHDR(selectedPath);
+            }
+
+            if (isSelected)
+              SetItemDefaultFocus();
+          }
+        }
+
+        EndCombo();
+      }
+    }
   }
 
   End();
