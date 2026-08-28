@@ -4,6 +4,7 @@
 
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
+#include "utils/utils.hpp"
 
 void image2D::write(const std::string& path, uvec2 size, u8 channels, byte* buf) {
   stbi_flip_vertically_on_write(true);
@@ -68,9 +69,14 @@ void image2D::load(fspath path, GLenum loadType, bool flipVertically) {
     case IMAGE2D_LOAD_R16UI:
       loadTif_R16UI();
       break;
-    default:
+    case IMAGE2D_LOAD_STB:
       load_STB();
-      this->loadType = IMAGE2D_LOAD_STB;
+      break;
+    case IMAGE2D_LOAD_STBF:
+      load_STBF();
+      break;
+    default:
+      error("[image2D::load] Unexpected loadType ({})", loadType);
   }
 
   if (!pixels)
@@ -80,6 +86,11 @@ void image2D::load(fspath path, GLenum loadType, bool flipVertically) {
 void image2D::load_STB() {
   stbi_set_flip_vertically_on_load(flipVertically);
   pixels = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
+}
+
+void image2D::load_STBF() {
+  stbi_set_flip_vertically_on_load(flipVertically);
+  pixels = stbi_loadf(path.string().c_str(), &width, &height, &channels, 0);
 }
 
 void image2D::loadTif_R16I() {
@@ -105,6 +116,7 @@ void image2D::clear() {
         error("[image2D::clear] pixels is not nullptr");
       break;
     case IMAGE2D_LOAD_STB:
+    case IMAGE2D_LOAD_STBF:
       stbi_image_free(pixels);
       break;
     case IMAGE2D_LOAD_R16I:
