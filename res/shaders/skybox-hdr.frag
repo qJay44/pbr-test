@@ -9,6 +9,9 @@ layout(binding = 0) uniform samplerCube u_texCubamap;
 void main() {
   vec3 color = texture(u_texCubamap, v_localPos).rgb;
 
+  // if (length(color) > 1.f)
+  //   color = vec3(1.f, 0.f, 0.f);
+
   color /= color + vec3(1.f);
   color = pow(color, vec3(1.f / 2.2f));
 

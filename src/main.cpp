@@ -92,16 +92,17 @@ int main() {
   // ===== Shaders ============================================== //
 
   Shader::setDirectoryLocation("res/shaders");
+  ShadersWatcher shadersWatcher;
 
   Shader lightShader("light.vert", "light.frag");
   Shader linesShader("lines.vert", "lines.frag");
   Shader sphereShader("sphere/segmented.vert", "pbr.frag", "tbn.geom");
   Shader skyboxHdrShader("skybox-hdr.vert", "skybox-hdr.frag");
 
-  ShadersWatcher::add(&lightShader);
-  ShadersWatcher::add(&linesShader);
-  ShadersWatcher::add(&sphereShader);
-  ShadersWatcher::add(&skyboxHdrShader);
+  shadersWatcher.add(&lightShader);
+  shadersWatcher.add(&linesShader);
+  shadersWatcher.add(&sphereShader);
+  shadersWatcher.add(&skyboxHdrShader);
 
   // ===== Cameras ============================================== //
 
@@ -124,10 +125,10 @@ int main() {
   LightPoint light3({0.f, 0.f, 100.f}, global::blue, vec3(3000.f));
 
   SphereSegmented sphere(128, 10.f);
-  sphere.loadMaterial("res/tex/materials/lava-and-rock");
+  sphere.loadMaterial("res/tex/materials/worn-medieval-armor");
 
   environment::init();
-  environment::loadFromImageEquirectangularHDR("res/tex/env/cedar_bridge_sunset_1_4k.hdr");
+  environment::loadFromImageEquirectangularHDR("res/tex/env/toposcope_sunset_4k.hdr");
 
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
@@ -166,7 +167,8 @@ int main() {
 
     global::profiler->clearTasks();
 
-    ShadersWatcher::check();
+    shadersWatcher.check();
+    environment::update();
 
     light0.update();
     light1.update();

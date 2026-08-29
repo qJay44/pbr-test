@@ -5,19 +5,20 @@
 #include "Shader.hpp"
 
 struct ShadersWatcher {
-  ShadersWatcher() = delete;
-
-  static void add(Shader* shader) {
+  void add(Shader* shader) {
     shaders.insert(shader);
   }
 
-  static void check() {
+  bool check() {
+    bool reloaded = false;
     for (Shader* shader : shaders)
-      if (shader->needsReload())
+      if ((reloaded |= shader->needsReload()))
         shader->reload();
+
+    return reloaded;
   }
 
 private:
-  static std::unordered_set<Shader*> shaders;
+  std::unordered_set<Shader*> shaders;
 };
 

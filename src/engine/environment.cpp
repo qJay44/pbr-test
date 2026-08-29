@@ -4,6 +4,7 @@
 #include "FBO.hpp"
 #include "RBO.hpp"
 #include "Shader.hpp"
+#include "ShadersWatcher.hpp"
 #include "mesh/MeshElements.hpp"
 #include "environment.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
@@ -56,11 +57,6 @@ namespace environment {
 
 namespace {
 
-bool initialized = false;
-MeshElements meshSkyboxCube;
-Shader shaderConvert;
-Shader shaderConvolute;
-
 constexpr TextureDescriptor generalTexDescHDR{
   .target = GL_NONE, // NOTE: Read members, never pass this descriptor as is
   .internalFormat = GL_RGB32F,
@@ -70,6 +66,13 @@ constexpr TextureDescriptor generalTexDescHDR{
 
 constexpr ivec2 cubemapResolution{1024};
 constexpr ivec2 irradianceResolution{32};
+
+bool initialized = false;
+MeshElements meshSkyboxCube;
+Shader shaderConvert;
+Shader shaderConvolute;
+ShadersWatcher shadersWatcher;
+Texture2D texEnvHDR;
 
 } // namespace
 
@@ -86,6 +89,12 @@ void init() {
   texEnvCubemapHDR.initEmpty(cubemapResolution, cubemapDesc);
   texIrradianceCubemapHDR.initEmpty(irradianceResolution, cubemapDesc);
 
+  shaderConvert = Shader("equirectangular-hdr-to-cubemap.vert", "equirectangular-hdr-to-cubemap.frag");
+  shaderConvolute = Shader("convolute-cubemap.vert", "convolute-cubemap.frag");
+
+  shadersWatcher.add(&shaderConvert);
+  shadersWatcher.add(&shaderConvolute);
+
   meshSkyboxCube = MeshElements::loadFromOBJ("res/obj/Cube.obj");
   initialized = true;
 }
@@ -97,13 +106,16 @@ void loadFromImageEquirectangularHDR(fspath hdrPath) {
 
   TextureDescriptor texDesc = generalTexDescHDR;
   texDesc.target = GL_TEXTURE_2D;
-  Texture2D texEnvHDR(image2D(hdrPath, IMAGE2D_LOAD_STBF, true), texDesc);
+  texEnvHDR = Texture2D(image2D(hdrPath, IMAGE2D_LOAD_STBF, true), texDesc);
 
-  shaderConvert = Shader("equirectangular-hdr-to-cubemap.vert", "equirectangular-hdr-to-cubemap.frag");
-  shaderConvolute = Shader("convolute-cubemap.vert", "convolute-cubemap.frag");
+  update(true);
+}
 
-  capturePass(&texEnvHDR, texEnvCubemapHDR, shaderConvert, cubemapResolution);
-  capturePass(&texEnvCubemapHDR, texIrradianceCubemapHDR, shaderConvolute, irradianceResolution);
+void update(bool forceUpdate) {
+  if (shadersWatcher.check() || forceUpdate) {
+    capturePass(&texEnvHDR, texEnvCubemapHDR, shaderConvert, cubemapResolution);
+    capturePass(&texEnvCubemapHDR, texIrradianceCubemapHDR, shaderConvolute, irradianceResolution);
+  }
 }
 
 void draw(const Camera* cam, Shader& shader) {
