@@ -111,8 +111,7 @@ void draw(const Camera* cam, Shader& shader) {
 
   glDepthFunc(GL_LEQUAL);
   glDisable(GL_CULL_FACE);
-  // texEnvCubemapHDR.bind(0);
-  texIrradianceCubemapHDR.bind(0);
+  texEnvCubemapHDR.bind(0);
   meshSkyboxCube.draw(cam, shader);
 
   glDepthFunc(GL_LESS);

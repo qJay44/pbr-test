@@ -26,6 +26,7 @@ layout(binding = 3) uniform sampler2D u_texHeight;
 layout(binding = 4) uniform sampler2D u_texMetallic;
 layout(binding = 5) uniform sampler2D u_texNormal;
 layout(binding = 6) uniform sampler2D u_texRoughness;
+layout(binding = 7) uniform samplerCube u_texIrradianceCubemapHDR;
 
 uniform LightPoint u_light0;
 uniform LightPoint u_light1;
@@ -70,6 +71,10 @@ float GeometrySmith(float roughness, vec3 N, vec3 V, vec3 L) {
 // Fresnel-Schlick Function
 vec3 FresnelSchlick(vec3 f0, float cosTheta) {
   return f0 + (vec3(1.f) - f0) * pow(clamp01(1.f - cosTheta), 5.f);
+}
+
+vec3 FresnelSchlickRoughness(vec3 f0, float cosTheta, float roughness) {
+  return f0 + (max(vec3(1.f - roughness), f0) - f0) * pow(clamp01(1.f - cosTheta), 5.f);
 }
 
 vec3 BRDF_CookTorrance(Material material, vec3 V, vec3 L, vec3 H) {
@@ -123,6 +128,18 @@ Material getMaterial(vec2 uv) {
   return material;
 }
 
+vec3 getIrradianceAmbient(Material material, vec3 V) {
+  vec3 N = material.normal;
+  vec3 f0 = mix(material.baseReflectivity, material.albedo, material.metallic);
+  vec3 Ks = FresnelSchlickRoughness(f0, dot0(N, V), material.roughness);
+  vec3 Kd = 1.f - Ks;
+  vec3 irradiance = texture(u_texIrradianceCubemapHDR, N).rgb;
+  vec3 diffuse = irradiance * material.albedo;
+  vec3 ambient = (Kd * diffuse) * material.ao;
+
+  return ambient;
+}
+
 void main() {
   vec3 V = normalize(u_camPos - v_worldPos);    // View vector (omega 0)
 
@@ -145,10 +162,8 @@ void main() {
     Lo += brdf * radiance * dot0(material.normal, L);
   }
 
-  // vec3 ambientColor = mix(material.albedo, material.baseReflectivity, material.metallic);
-  // vec3 ambient = 0.01f * ambientColor * material.ao;
-
-  vec3 color = Lo + material.emissivity;
+  vec3 ambient = getIrradianceAmbient(material, V);
+  vec3 color = Lo + ambient + material.emissivity;
   color /= color + vec3(1.f);
   color = pow(color, vec3(1.f / 2.2f));
 
