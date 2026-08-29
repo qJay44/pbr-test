@@ -6,7 +6,8 @@
 
 namespace environment {
 
-extern TextureCubemap texEnvCubemap;
+extern TextureCubemap texEnvCubemapHDR;
+extern TextureCubemap texIrradianceCubemapHDR;
 extern fspath _lastLoadedImage;
 
 void init();

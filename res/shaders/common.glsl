@@ -1,4 +1,5 @@
 #define PI 3.14159265358979
+#define PI_2 (PI / 2.f)
 #define TAU (2.0 * PI)
 #define PHI 1.6180339
 #define GOLDEN_ANGLE (TAU * (2.0 - PHI))
