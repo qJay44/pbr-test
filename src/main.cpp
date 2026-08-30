@@ -189,7 +189,6 @@ int main() {
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    environment::texIrradianceCubemapHDR.bind(7);
     sphere.draw(&cameraSpectate, sphereShader);
 
     glDisable(GL_CULL_FACE);

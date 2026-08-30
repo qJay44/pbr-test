@@ -106,7 +106,6 @@ void generateIrradiance() {
 }
 
 void generatePrefilter() {
-  GLint maxMipLevels = 5;
   for (GLint mip = 0; mip < maxMipLevels; mip++) {
     ivec2 mipSize = vec2(envPrefilterCubemapResolution) * glm::pow(0.5f, (float)mip);
     float roughness = (float)mip / (maxMipLevels - 1.f);
@@ -125,6 +124,7 @@ TextureCubemap texEnvCubemapHDR;
 TextureCubemap texEnvPrefilterCubemapHDR;
 TextureCubemap texIrradianceCubemapHDR;
 Texture2D texBrdfLut;
+GLint maxMipLevels = 5;
 fspath _lastLoadedImage;
 
 void init() {

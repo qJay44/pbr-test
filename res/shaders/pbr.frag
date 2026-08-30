@@ -9,6 +9,7 @@ in mat3 v_tbn;
 
 out vec4 FragColor;
 
+// From material
 layout(binding = 0) uniform sampler2D u_texAlbedo;
 layout(binding = 1) uniform sampler2D u_texAmbientOcclusion;
 layout(binding = 2) uniform sampler2D u_texEmissive;
@@ -16,7 +17,11 @@ layout(binding = 3) uniform sampler2D u_texHeight;
 layout(binding = 4) uniform sampler2D u_texMetallic;
 layout(binding = 5) uniform sampler2D u_texNormal;
 layout(binding = 6) uniform sampler2D u_texRoughness;
-layout(binding = 7) uniform samplerCube u_texIrradianceCubemapHDR;
+
+// From environment
+layout(binding = 7) uniform sampler2D u_texBrdfLut;
+layout(binding = 8) uniform samplerCube u_texEnvPrefilterCubemapHDR;
+layout(binding = 9) uniform samplerCube u_texIrradianceCubemapHDR;
 
 uniform LightPoint u_light0;
 uniform LightPoint u_light1;
@@ -24,6 +29,7 @@ uniform LightPoint u_light2;
 uniform LightPoint u_light3;
 uniform vec3 u_camPos;
 uniform vec3 u_baseReflectivity;
+uniform float u_maxReflectionLod;
 
 LightPoint lights[4] = { u_light0, u_light1, u_light2, u_light3 }; // HACK: uuuughh
 
@@ -64,12 +70,19 @@ Material getMaterial(vec2 uv) {
 
 vec3 getIrradianceAmbient(Material material, vec3 V) {
   vec3 N = material.normal;
-  vec3 f0 = mix(material.baseReflectivity, material.albedo, material.metallic);
-  vec3 Ks = FresnelSchlickRoughness(f0, dot0(N, V), material.roughness);
-  vec3 Kd = 1.f - Ks;
+  vec3 R = reflect(-V, N);
+  vec3 F = FresnelSchlickRoughness(material.baseReflectivity, dot0(N, V), material.roughness);
+
+  vec3 Ks = F;
+  vec3 Kd = (1.f - Ks) * (1.f - material.metallic);
   vec3 irradiance = texture(u_texIrradianceCubemapHDR, N).rgb;
   vec3 diffuse = irradiance * material.albedo;
-  vec3 ambient = (Kd * diffuse) * material.ao;
+
+  vec3 prefilterColor = textureLod(u_texEnvPrefilterCubemapHDR, R, material.roughness * u_maxReflectionLod).rgb;
+  vec2 envBRDF = texture(u_texBrdfLut, vec2(dot0(N, V), material.roughness)).rg;
+  vec3 specular = prefilterColor * (F * envBRDF.x + envBRDF.y);
+
+  vec3 ambient = (Kd * diffuse + specular) * material.ao;
 
   return ambient;
 }

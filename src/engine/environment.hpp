@@ -11,6 +11,7 @@ extern TextureCubemap texEnvCubemapHDR;
 extern TextureCubemap texEnvPrefilterCubemapHDR;
 extern TextureCubemap texIrradianceCubemapHDR;
 extern Texture2D texBrdfLut;
+extern GLint maxMipLevels;
 extern fspath _lastLoadedImage;
 
 void init();

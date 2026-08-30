@@ -15,7 +15,7 @@ void main() {
   vec3 right = normalize(cross(up, normal));
   up = normalize(cross(normal, right));
 
-  float sampleDelta = TAU / 512.f;
+  float sampleDelta = TAU / 1024.f;
   float nrSamples = 0.f;
   for (float phi = 0.f; phi < TAU; phi += sampleDelta) {
     for (float theta = 0.f; theta < PI_2; theta += sampleDelta) {
