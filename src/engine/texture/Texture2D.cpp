@@ -28,6 +28,14 @@ void Texture2D::initStorage(const image2D& img, const TextureDescriptor& desc) {
   unbind();
 }
 
+void Texture2D::initStorage(ivec2 size, const TextureDescriptor& desc) {
+  initStorage(image2D{size.x, size.y}, desc);
+}
+
+void Texture2D::initStorage(int size, const TextureDescriptor& desc) {
+  initStorage(image2D{size, size}, desc);
+}
+
 void Texture2D::initImage(const image2D& img, const TextureDescriptor& desc) {
   onInit(desc);
   glTexImage2D(desc.target, 0, desc.internalFormat, img.width, img.height, 0, desc.format, desc.type, img.pixels);
@@ -40,6 +48,9 @@ Texture2D::Texture2D(const image2D& img, const TextureDescriptor& desc) {
 
 Texture2D::Texture2D(const ivec2& size, const TextureDescriptor& desc)
   : Texture2D(image2D{size.x, size.y}, desc) {}
+
+Texture2D::Texture2D(int size, const TextureDescriptor& desc)
+  : Texture2D(image2D{size, size}, desc) {}
 
 Texture2D::Texture2D(const fspath& path, const TextureDescriptor& desc)
   : Texture2D(image2D(path), desc) {}
@@ -54,6 +65,7 @@ void Texture2D::onInit(const TextureDescriptor& desc) {
   if (desc.target != GL_TEXTURE_2D)
     error("[Texture2D::Texture2D] Wrong target ({:#x})", desc.target);
 
+  clear();
   target = desc.target;
 
   glGenTextures(1, &id);

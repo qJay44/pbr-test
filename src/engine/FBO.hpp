@@ -6,8 +6,10 @@ struct FBO {
   GLsizei size = 0;
   GLuint id = 0;
 
-  FBO(GLsizei size = 1) : size(size) {
-    gen();
+  FBO() = default;
+
+  FBO(GLsizei size) {
+    gen(size);
   }
 
   FBO(const FBO&) = delete;
@@ -35,7 +37,11 @@ struct FBO {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
-  void gen() {
+  void gen(GLsizei size = 1) {
+    if (id)
+      error("[FBO::gen] FBO is already generated");
+
+    this->size = size;
     glGenFramebuffers(size, &id);
   }
 

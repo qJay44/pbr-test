@@ -10,13 +10,14 @@ struct VAO {
   }
 
   static const VAO& getEmpty() {
-    static VAO emptyVAO(1, true);
+    static VAO emptyVAO(1);
     return emptyVAO;
   }
 
-  VAO(GLsizei size = 1, bool instaGen = false) {
-    if (instaGen)
-      gen(size);
+  VAO() = default;
+
+  VAO(GLsizei size) {
+    gen(size);
   }
 
   VAO(const VAO&) = delete;
@@ -38,6 +39,9 @@ struct VAO {
   }
 
   void gen(GLsizei size = 1) {
+    if (id)
+      error("[VAO::gen] VAO is already generated");
+
     this->size = size;
     glGenVertexArrays(size, &id);
   }

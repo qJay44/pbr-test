@@ -2,12 +2,15 @@
 
 #include "Camera.hpp"
 #include "Shader.hpp"
+#include "texture/Texture2D.hpp"
 #include "texture/TextureCubemap.hpp"
 
 namespace environment {
 
 extern TextureCubemap texEnvCubemapHDR;
+extern TextureCubemap texEnvPrefilterCubemapHDR;
 extern TextureCubemap texIrradianceCubemapHDR;
+extern Texture2D texBrdfLut;
 extern fspath _lastLoadedImage;
 
 void init();

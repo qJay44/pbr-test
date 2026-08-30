@@ -4,8 +4,10 @@ struct RBO {
   GLsizei size = 0;
   GLuint id = 0;
 
-  RBO(GLsizei size = 1) : size(size) {
-    gen();
+  RBO() = default;
+
+  RBO(GLsizei size) {
+    gen(size);
   }
 
   RBO(const RBO&) = delete;
@@ -33,7 +35,11 @@ struct RBO {
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
   }
 
-  void gen() {
+  void gen(GLsizei size = 1) {
+    if (id)
+      error("[RBO::gen] RBO is already generated");
+
+    this->size = size;
     glGenRenderbuffers(size, &id);
   }
 

@@ -1,6 +1,6 @@
 #version 460 core
 
-#include "common.glsl"
+#include "../common.glsl"
 
 in vec3 v_localPos;
 

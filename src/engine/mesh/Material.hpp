@@ -49,7 +49,7 @@ struct Material {
       if (fs::exists(emissivePath))
         textures[IDX_EMISSIVITY] = Texture2D(image2D(emissivePath),  descRGBA);
       else
-        textures[IDX_EMISSIVITY].initStorage({1, 1}, descRed);
+        textures[IDX_EMISSIVITY].initStorage(ivec2{1, 1}, descRed);
 
       currFolder = folderPath;
 
