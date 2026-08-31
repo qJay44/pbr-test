@@ -23,6 +23,7 @@ layout(binding = 7) uniform sampler2D u_texBrdfLut;
 layout(binding = 8) uniform samplerCube u_texEnvPrefilterCubemapHDR;
 layout(binding = 9) uniform samplerCube u_texIrradianceCubemapHDR;
 
+uniform Material u_customMaterial;
 uniform LightPoint u_light0;
 uniform LightPoint u_light1;
 uniform LightPoint u_light2;
@@ -30,6 +31,7 @@ uniform LightPoint u_light3;
 uniform vec3 u_camPos;
 uniform vec3 u_baseReflectivity;
 uniform float u_maxReflectionLod;
+uniform bool u_useCustomMaterial;
 
 LightPoint lights[4] = { u_light0, u_light1, u_light2, u_light3 }; // HACK: uuuughh
 
@@ -57,13 +59,19 @@ vec3 getNormalFromTangentMapFrag(sampler2D normalMap, vec2 uv) {
 
 Material getMaterial(vec2 uv) {
   Material material;
-  material.albedo           = texture(u_texAlbedo, uv).rgb;
-  material.emissivity       = texture(u_texEmissive, uv).rgb;
   material.baseReflectivity = u_baseReflectivity;
-  material.normal           = getNormalFromTangentMapFrag(u_texNormal, uv);
-  material.metallic         = texture(u_texMetallic, uv).r;
-  material.roughness        = texture(u_texRoughness, uv).r;
-  material.ao               = texture(u_texAmbientOcclusion, uv).r;
+
+  if (u_useCustomMaterial) {
+    material = u_customMaterial;
+    material.normal = normalize(v_normal);
+  } else {
+    material.albedo     = texture(u_texAlbedo, uv).rgb;
+    material.emissivity = texture(u_texEmissive, uv).rgb;
+    material.normal     = getNormalFromTangentMapFrag(u_texNormal, uv);
+    material.metallic   = texture(u_texMetallic, uv).r;
+    material.roughness  = texture(u_texRoughness, uv).r;
+    material.ao         = texture(u_texAmbientOcclusion, uv).r;
+  }
 
   return material;
 }
@@ -71,7 +79,8 @@ Material getMaterial(vec2 uv) {
 vec3 getIrradianceAmbient(Material material, vec3 V) {
   vec3 N = material.normal;
   vec3 R = reflect(-V, N);
-  vec3 F = FresnelSchlickRoughness(material.baseReflectivity, dot0(N, V), material.roughness);
+  vec3 f0 = mix(material.baseReflectivity, material.albedo, material.metallic);
+  vec3 F = FresnelSchlickRoughness(f0, dot0(N, V), material.roughness);
 
   vec3 Ks = F;
   vec3 Kd = (1.f - Ks) * (1.f - material.metallic);

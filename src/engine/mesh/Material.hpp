@@ -20,9 +20,20 @@ struct Material {
     IDX_ROUGHNESS,
   };
 
+  struct Custom {
+    vec3 albedo;
+    vec3 emissivity;
+    vec3 normal;
+    float metallic;
+    float roughness;
+    float ao;
+  };
+
   f0::index baseReflectivityIdx = f0::IDX_IRON;
   std::array<Texture2D, 7> textures{};
   fspath currFolder;
+  Custom customMaterial{};
+  bool useCustomMaterial = false;
 
   void loadFrom(fspath folderPath) {
     namespace fs = std::filesystem;
@@ -60,11 +71,22 @@ struct Material {
 
   void setUniforms(Shader& shader) const {
     shader.setUniform3f("u_baseReflectivity", f0::all[baseReflectivityIdx].color);
+    shader.setUniform1i("u_useCustomMaterial", useCustomMaterial);
+
+    if (useCustomMaterial) {
+      shader.setUniform3f("u_customMaterial.albedo", customMaterial.albedo);
+      shader.setUniform3f("u_customMaterial.emissivity", customMaterial.emissivity);
+      shader.setUniform3f("u_customMaterial.normal", customMaterial.normal);
+      shader.setUniform1f("u_customMaterial.metallic", customMaterial.metallic);
+      shader.setUniform1f("u_customMaterial.roughness", customMaterial.roughness);
+      shader.setUniform1f("u_customMaterial.ao", customMaterial.ao);
+    }
   }
 
   void bindTextures() const {
-    for (size_t i = 0; i < textures.size(); i++)
-      textures[i].bind(i);
+    if (!useCustomMaterial)
+      for (size_t i = 0; i < textures.size(); i++)
+        textures[i].bind(i);
   }
 };
 

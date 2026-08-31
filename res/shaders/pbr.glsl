@@ -63,10 +63,11 @@ vec3 FresnelSchlickRoughness(vec3 f0, float cosTheta, float roughness) {
 vec3 BRDF_CookTorrance(Material material, vec3 V, vec3 L, vec3 H, float geomSmith) {
   vec3 N = material.normal;
   vec3 lambert = material.albedo / PI;
+  vec3 f0 = mix(material.baseReflectivity, material.albedo, material.metallic);
 
   float D = DistributionGGX(material.roughness, N, H);
   float G = geomSmith;
-  vec3 F = FresnelSchlick(material.baseReflectivity, dot0(N, H));
+  vec3 F = FresnelSchlick(f0, dot0(N, H));
 
   vec3 numerator = D * F * G;
   float denominator = 4.f * dot0(N, V) * dot0(N, L);

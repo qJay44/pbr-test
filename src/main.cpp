@@ -36,10 +36,12 @@ void GLAPIENTRY MessageCallback(
   switch (source) {
     case GL_DEBUG_SOURCE_SHADER_COMPILER:
       return; // Handled by the Shader class itself
-    case GL_DEBUG_SOURCE_API:
-      clrpFinal = clrpWarning; // "SIMD32 shader inefficient", skipping since occurs only on my laptop
-      stop = false;
-      break;
+  }
+
+  // Suppress annoyoing SIMD32 callback
+  if (type == GL_DEBUG_TYPE_PERFORMANCE) {
+    clrpFinal = clrpWarning;
+    stop = false;
   }
 
   fprintf(
@@ -124,8 +126,34 @@ int main() {
   LightPoint light2({0.f, 100.f, 0.f}, global::green, vec3(3000.f));
   LightPoint light3({0.f, 0.f, 100.f}, global::blue, vec3(3000.f));
 
-  SphereSegmented sphere(128, 10.f);
-  sphere.loadMaterial("res/tex/materials/worn-medieval-armor");
+  SphereSegmented sphereTextured(128, 10.f);
+  sphereTextured.material.loadFrom("res/tex/materials/worn-medieval-armor");
+
+  SphereSegmented sphereArray[49];
+  {
+    int rows = 7;
+    int cols = 7;
+    float radius = 10.f;
+    float padding = 20.f;
+    vec3 globalOffset{0.f, (radius + padding) * rows, -50.f};
+
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
+        int idx = i * cols + j;
+        vec2 posXY = vec2(j, -i) * (radius * 2.f + padding);
+
+        SphereSegmented& sphere = sphereArray[idx];
+        sphere = SphereSegmented(128, radius);
+        sphere.mesh.setMatTranslation(vec3(posXY, 0.f) + globalOffset);
+
+        sphere.material.customMaterial.albedo = global::red;
+        sphere.material.customMaterial.metallic = 1.f - (float)i / rows;
+        sphere.material.customMaterial.roughness = 1.f - (float)j / cols;
+        sphere.material.customMaterial.ao = 1.f;
+        sphere.material.useCustomMaterial = true;
+      }
+    }
+  }
 
   environment::init();
   environment::loadFromImageEquirectangularHDR("res/tex/env/toposcope_sunset_4k.hdr");
@@ -135,7 +163,7 @@ int main() {
 
   gui::camPtr = &cameraSpectate;
   gui::lightPtr = &light0;
-  gui::spherePtr = &sphere;
+  gui::spherePtr = &sphereTextured;
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -189,7 +217,10 @@ int main() {
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    sphere.draw(&cameraSpectate, sphereShader);
+    sphereTextured.draw(&cameraSpectate, sphereShader);
+
+    for (const auto& sphere : sphereArray)
+      sphere.draw(&cameraSpectate, sphereShader);
 
     glDisable(GL_CULL_FACE);
 

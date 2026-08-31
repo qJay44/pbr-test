@@ -46,20 +46,14 @@ SphereSegmented::SphereSegmented(size_t segments, float radius) : radius(radius)
   mesh = MeshElements(data);
 }
 
-void SphereSegmented::loadMaterial(fspath folderPath) {
-  material.loadFrom(folderPath);
-}
-
-void SphereSegmented::setHeightScale(float h) {
-  heightScale = h;
-}
-
 void SphereSegmented::draw(const Camera* camera, Shader& shader) const {
   material.setUniforms(shader);
   material.bindTextures();
+
   shader.setUniform1f("u_radius", radius);
   shader.setUniform1f("u_heightScale", heightScale);
   shader.setUniform1f("u_maxReflectionLod", environment::maxMipLevels);
+
   environment::texBrdfLut.bind(7);
   environment::texEnvPrefilterCubemapHDR.bind(8);
   environment::texIrradianceCubemapHDR.bind(9);
