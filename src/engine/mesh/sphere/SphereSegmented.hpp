@@ -1,13 +1,12 @@
 #pragma once
 
 #include "../MeshElements.hpp"
-#include "../Material.hpp"
+#include "../pbr/Model.hpp"
 
-struct SphereSegmented {
+struct SphereSegmented : public pbr::Model {
   float radius;
   float heightScale = 1.f;
   MeshElements mesh;
-  Material material{};
 
   SphereSegmented() = default;
   SphereSegmented(size_t segments, float radius);

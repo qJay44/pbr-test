@@ -1,21 +1,14 @@
 #pragma once
 
 #include "../MeshElementsInstancing.hpp"
-#include "../Material.hpp"
+#include "../pbr/Model.hpp"
 
-class SphereInflatedCube {
-public:
-  SphereInflatedCube(size_t resolution, float radius, GLenum renderPrimitive = GL_TRIANGLES);
-
-  void loadMaterial(fspath folderPath);
-  void draw(const Camera* camera, Shader& shader) const;
-
-private:
-  friend struct gui;
-
+struct SphereInflatedCube : public pbr::Model {
   float radius;
   MeshElementsInstancing mesh;
 
-  Material material{};
+  SphereInflatedCube(size_t resolution, float radius, GLenum renderPrimitive = GL_TRIANGLES);
+
+  void draw(const Camera* camera, Shader& shader) const;
 };
 

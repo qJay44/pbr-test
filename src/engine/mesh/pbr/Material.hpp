@@ -4,10 +4,12 @@
 #include <filesystem>
 #include <string>
 
-#include "../Shader.hpp"
-#include "../texture/Texture2D.hpp"
+#include "../../Shader.hpp"
+#include "../../texture/Texture2D.hpp"
 #include "f0.hpp"
 #include "utils/utils.hpp"
+
+namespace pbr {
 
 struct Material {
   enum TextureIdx {
@@ -35,32 +37,51 @@ struct Material {
   Custom customMaterial{};
   bool useCustomMaterial = false;
 
-  void loadFrom(fspath folderPath) {
+  Material() {
+    for (auto& tex : textures)
+      tex.initStorage(image2D{1, 1}, {});
+  }
+
+  void loadFrom(fspath folderPath, bool flipVertically = true) {
     namespace fs = std::filesystem;
     using enum TextureIdx;
 
     if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
+      std::string ext;
+      {
+        // NOTE: Assuming all images have same extension
+        auto it = fs::directory_iterator(folderPath);
+        if (it != fs::directory_iterator{})
+          ext = it->path().extension();
+        else
+          error("[Material::loadFrom] Directory ({}) is empty", folderPath.string());
+      }
+
       std::string prefixName = folderPath.lexically_normal().filename().string() + "_";
+
       const auto path_to = [&prefixName, &folderPath] (const std::string& f) {
         return folderPath / (prefixName + f);
       };
 
-      TextureDescriptor descRGBA{.internalFormat = GL_RGBA8, .format = GL_RGBA, .wrapS = GL_REPEAT, .wrapT = GL_REPEAT};
+      TextureDescriptor descSRGBA{.internalFormat = GL_SRGB_ALPHA, .format = GL_RGBA, .wrapS = GL_REPEAT, .wrapT = GL_REPEAT};
       TextureDescriptor descRGB{.wrapS = GL_REPEAT, .wrapT = GL_REPEAT};
+      TextureDescriptor descSRGB{.internalFormat = GL_SRGB8, .wrapS = GL_REPEAT, .wrapT = GL_REPEAT};
       TextureDescriptor descRed{.internalFormat = GL_R8, .wrapS = GL_REPEAT, .wrapT = GL_REPEAT};
 
-      textures[IDX_ALBEDO]     = Texture2D(image2D(path_to("albedo.png")),    descRGB);
-      textures[IDX_AO]         = Texture2D(image2D(path_to("ao.png")),        descRed);
-      textures[IDX_HEIGHT]     = Texture2D(image2D(path_to("height.png")),    descRed);
-      textures[IDX_METALLIC]   = Texture2D(image2D(path_to("metallic.png")),  descRed);
-      textures[IDX_NORMAL]     = Texture2D(image2D(path_to("normal-dx.png")), descRGB);
-      textures[IDX_ROUGHNESS]  = Texture2D(image2D(path_to("roughness.png")), descRed);
+      textures[IDX_ALBEDO]     = Texture2D(image2D(path_to("albedo"    + ext), flipVertically), descSRGB);
+      textures[IDX_AO]         = Texture2D(image2D(path_to("ao"        + ext), flipVertically), descRed);
+      textures[IDX_METALLIC]   = Texture2D(image2D(path_to("metallic"  + ext), flipVertically), descRed);
+      textures[IDX_NORMAL]     = Texture2D(image2D(path_to("normal-dx" + ext), flipVertically), descRGB);
+      textures[IDX_ROUGHNESS]  = Texture2D(image2D(path_to("roughness" + ext), flipVertically), descRed);
 
-      fspath emissivePath = path_to("emissive.png");
+      fspath emissivePath = path_to("emissive" + ext);
+      fspath heightPath = path_to("height" + ext);
+
       if (fs::exists(emissivePath))
-        textures[IDX_EMISSIVITY] = Texture2D(image2D(emissivePath),  descRGBA);
-      else
-        textures[IDX_EMISSIVITY].initStorage(ivec2{1, 1}, descRed);
+        textures[IDX_EMISSIVITY] = Texture2D(image2D(emissivePath, flipVertically),  descSRGBA);
+
+      if (fs::exists(heightPath))
+        textures[IDX_HEIGHT] = Texture2D(image2D(heightPath, flipVertically),  descRed);
 
       currFolder = folderPath;
 
@@ -89,4 +110,6 @@ struct Material {
         textures[i].bind(i);
   }
 };
+
+}
 

@@ -8,14 +8,9 @@ SphereInflatedCube::SphereInflatedCube(size_t resolution, float radius, GLenum r
   mesh.setInstanceCount(6);
 }
 
-void SphereInflatedCube::loadMaterial(fspath folderPath) {
-  material.loadFrom(folderPath);
-}
-
 void SphereInflatedCube::draw(const Camera* camera, Shader& shader) const {
-  material.setUniforms(shader);
-  material.bindTextures();
   shader.setUniform1f("u_radius", radius);
+  preDraw(shader);
 
   mesh.draw(camera, shader);
 }

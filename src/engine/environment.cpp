@@ -179,7 +179,7 @@ void loadFromImageEquirectangularHDR(fspath hdrPath) {
 
   TextureDescriptor texDesc = generalTexDescHDR;
   texDesc.target = GL_TEXTURE_2D;
-  texEnvHDR = Texture2D(image2D(hdrPath, IMAGE2D_LOAD_STBF, true), texDesc);
+  texEnvHDR = Texture2D(image2D(hdrPath, true, IMAGE2D_LOAD_STBF), texDesc);
 
   update(true);
 }

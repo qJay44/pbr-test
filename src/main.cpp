@@ -6,14 +6,15 @@
   #define CHDIR(p) chdir(p);
 #endif
 
-#include "global.hpp"
-#include "engine/gui/gui.hpp"
 #include "engine/Camera.hpp"
-#include "engine/ShadersWatcher.hpp"
 #include "engine/InputsHandler.hpp"
 #include "engine/LightPoint.hpp"
-#include "engine/mesh/sphere/SphereSegmented.hpp"
+#include "engine/ShadersWatcher.hpp"
 #include "engine/environment.hpp"
+#include "engine/gui/gui.hpp"
+#include "engine/mesh/fbx/model.hpp"
+#include "engine/mesh/sphere/SphereSegmented.hpp"
+#include "global.hpp"
 #include "utils/clrp.hpp"
 
 using global::window;
@@ -98,8 +99,9 @@ int main() {
 
   Shader lightShader("light.vert", "light.frag");
   Shader linesShader("lines.vert", "lines.frag");
-  Shader sphereShader("sphere/segmented.vert", "pbr.frag", "tbn.geom");
+  Shader sphereShader("pbrPTN.vert", "pbr.frag", "tbn.geom");
   Shader skyboxHdrShader("skybox-hdr.vert", "skybox-hdr.frag");
+  Shader pbrPCTNShader("pbrPCTN.vert", "pbr.frag", "tbn.geom");
 
   shadersWatcher.add(&lightShader);
   shadersWatcher.add(&linesShader);
@@ -119,12 +121,14 @@ int main() {
   glfwSetKeyCallback(window, InputsHandler::keyCallback);
   glfwSetCursorPosCallback(window, InputsHandler::cursorPosCallback);
 
-  // ============================================================ //
+  // ===== Lights =============================================== //
 
   LightPoint light0({50.f, 100.f, 50.f}, vec3(1.f), vec3(3000.f));
   LightPoint light1({100.f, 0.f, 0.f}, global::red, vec3(3000.f));
   LightPoint light2({0.f, 100.f, 0.f}, global::green, vec3(3000.f));
   LightPoint light3({0.f, 0.f, 100.f}, global::blue, vec3(3000.f));
+
+  // ===== Meshes =============================================== //
 
   SphereSegmented sphereTextured(128, 10.f);
   sphereTextured.material.loadFrom("res/tex/materials/worn-medieval-armor");
@@ -154,6 +158,13 @@ int main() {
       }
     }
   }
+
+  fbx::Model cerberus = fbx::load("res/fbx/Cerberus_LP.FBX");
+  cerberus.meshes.front().mesh.setMatTranslation({-100.f, 0.f, 0.f});
+  pbr::Model cerberusModelPBR{};
+  cerberusModelPBR.material.loadFrom("res/tex/Cerberus");
+
+  // ============================================================ //
 
   environment::init();
   environment::loadFromImageEquirectangularHDR("res/tex/env/toposcope_sunset_4k.hdr");
@@ -221,6 +232,11 @@ int main() {
 
     for (const auto& sphere : sphereArray)
       sphere.draw(&cameraSpectate, sphereShader);
+
+    for (const auto& fbxMesh : cerberus.meshes) {
+      cerberusModelPBR.preDraw(pbrPCTNShader);
+      fbxMesh.mesh.draw(&cameraSpectate, pbrPCTNShader);
+    }
 
     glDisable(GL_CULL_FACE);
 

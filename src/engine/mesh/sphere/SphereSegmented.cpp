@@ -47,16 +47,8 @@ SphereSegmented::SphereSegmented(size_t segments, float radius) : radius(radius)
 }
 
 void SphereSegmented::draw(const Camera* camera, Shader& shader) const {
-  material.setUniforms(shader);
-  material.bindTextures();
-
   shader.setUniform1f("u_radius", radius);
-  shader.setUniform1f("u_heightScale", heightScale);
-  shader.setUniform1f("u_maxReflectionLod", environment::maxMipLevels);
-
-  environment::texBrdfLut.bind(7);
-  environment::texEnvPrefilterCubemapHDR.bind(8);
-  environment::texIrradianceCubemapHDR.bind(9);
+  preDraw(shader);
 
   mesh.draw(camera, shader);
 }

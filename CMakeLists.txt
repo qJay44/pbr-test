@@ -35,6 +35,25 @@ target_include_directories(ImGui_GLFW_OpenGL PUBLIC
   # ${IMPLOT_PATH}
 )
 
+# ===== ufbx ====================================================== #
+
+include(FetchContent)
+
+FetchContent_Declare(
+  ufbx_external
+  GIT_REPOSITORY https://github.com/ufbx/ufbx
+  GIT_TAG        master
+)
+
+FetchContent_MakeAvailable(ufbx_external)
+
+add_library(ufbx STATIC
+  ${ufbx_external_SOURCE_DIR}/ufbx.c
+  ${ufbx_external_SOURCE_DIR}/ufbx.h
+)
+
+target_include_directories(ufbx PUBLIC ${ufbx_external_SOURCE_DIR})
+
 # ===== My utils ================================================== #
 
 file(GLOB_RECURSE UTILS_SOURCES ${UTILS_PATH}/src/*.cpp)
@@ -61,5 +80,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${JSON_PATH}/include
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw TIFF::TIFF GLAD ImGui_GLFW_OpenGL Utils)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw TIFF::TIFF GLAD ImGui_GLFW_OpenGL ufbx Utils)
 

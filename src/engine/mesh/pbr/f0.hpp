@@ -1,6 +1,6 @@
 #pragma once
 
-namespace f0 {
+namespace pbr::f0 {
 
 struct f0 {
   const char* name;

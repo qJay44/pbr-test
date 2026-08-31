@@ -116,6 +116,7 @@ void gui::draw() {
     }
 
     {
+      using namespace pbr;
       static f0::index& selectedIdx = spherePtr->material.baseReflectivityIdx;
 
       if (BeginCombo("Base reflectivity", f0::all[selectedIdx].name)) {
