@@ -18,6 +18,7 @@ layout(binding = 3) uniform sampler2D u_texHeight;
 uniform mat4 u_model;
 uniform mat4 u_camPV;
 uniform float u_heightScale;
+uniform bool u_useCustomMaterial;
 
 void main() {
   vec3 edge0 = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
@@ -37,9 +38,12 @@ void main() {
   );
 
   for (int i = 0; i < 3; i++) {
-    float h = texture(u_texHeight, data_in[i].uv).r;
     vec3 pos = gl_in[i].gl_Position.xyz;
-    pos += data_in[i].normal * h * u_heightScale;
+
+    if (!u_useCustomMaterial) {
+      float h = texture(u_texHeight, data_in[i].uv).r;
+      pos += data_in[i].normal * h * u_heightScale;
+    }
 
     vec4 worldPos = u_model * vec4(pos, 1.f);
 
